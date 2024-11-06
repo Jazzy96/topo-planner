@@ -1,6 +1,7 @@
 version: '3'
 services:
   topo-planner:
+    container_name: topo-planner
     build: .
     ports:
       - "8080:8080"
