@@ -4,8 +4,9 @@ class TopologyVisualizer {
       this.ctx = canvas.getContext('2d');
       this.resize();
       this.scale = 1;
-      this.nodeSpacing = 50; // 同级节点之间的最小间距
-      this.levelHeight = 100; // 层级之间的垂直间距
+      this.nodeSpacing = 80; // 增加节点间距
+      this.levelHeight = 120; // 增加层级高度
+      this.nodePadding = 20; // 节点周围的额外空间
       window.addEventListener('resize', () => this.resize());
   }
 
@@ -19,27 +20,27 @@ class TopologyVisualizer {
 
   drawNode(x, y, node, id) {
       const ctx = this.ctx;
-      const radius = 15 * this.scale;
+      const radius = 20; // 增加节点大小
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fillStyle = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
       ctx.fill();
       ctx.strokeStyle = '#2c5282';
-      ctx.lineWidth = 1 * this.scale;
+      ctx.lineWidth = 2;
       ctx.stroke();
       
       ctx.fillStyle = '#2d3748';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `bold ${10 * this.scale}px Arial`;
+      ctx.font = 'bold 12px Arial';
       ctx.fillText(id, x, y);
       
-      ctx.font = `${8 * this.scale}px Arial`;
+      ctx.font = '10px Arial';
       const channelInfo = `CH:${node.channel.join(',')}`;
       const bwInfo = `BW:${node.bandwidth.join(',')}`;
-      ctx.fillText(channelInfo, x, y + radius + 10 * this.scale);
-      ctx.fillText(bwInfo, x, y + radius + 20 * this.scale);
+      ctx.fillText(channelInfo, x, y + radius + 15);
+      ctx.fillText(bwInfo, x, y + radius + 30);
   }
 
   drawTopology(data) {
@@ -48,18 +49,18 @@ class TopologyVisualizer {
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       const root = Object.entries(data).find(([_, node]) => node.parent === null)[0];
-      const { positions, treeWidth, treeHeight } = this.calculateNodePositions(data, root);
+      const { positions, width, height } = this.calculateNodePositions(data, root);
 
       // 计算缩放比例
-      const scaleX = (this.canvas.width - 40) / treeWidth;
-      const scaleY = (this.canvas.height - 40) / treeHeight;
-      this.scale = Math.min(scaleX, scaleY, 1); // 限制最大缩放为1
+      const scaleX = this.canvas.width / (width + this.nodePadding * 2);
+      const scaleY = this.canvas.height / (height + this.nodePadding * 2);
+      this.scale = Math.min(scaleX, scaleY, 1);
 
       // 应用缩放和平移
       ctx.save();
       ctx.translate(
-          (this.canvas.width - treeWidth * this.scale) / 2,
-          (this.canvas.height - treeHeight * this.scale) / 2
+          (this.canvas.width - width * this.scale) / 2,
+          (this.canvas.height - height * this.scale) / 2
       );
       ctx.scale(this.scale, this.scale);
 
@@ -81,7 +82,7 @@ class TopologyVisualizer {
 
       if (children.length === 0) {
           positions[rootId] = { x, y };
-          return { positions, width: this.nodeSpacing, height: this.levelHeight, leftWidth: this.nodeSpacing / 2 };
+          return { positions, width: this.nodeSpacing, height: this.levelHeight };
       }
 
       let totalWidth = 0;
@@ -96,10 +97,10 @@ class TopologyVisualizer {
       // 调整子节点的x坐标
       let currentX = x - totalWidth / 2;
       childrenData.forEach(child => {
-          const childCenterX = currentX + child.leftWidth;
-          child.positions[child.id].x += childCenterX;
+          const childCenterX = currentX + child.width / 2;
           Object.entries(child.positions).forEach(([id, pos]) => {
-              pos.x += currentX;
+              pos.x += childCenterX - x;
+              pos.y += this.levelHeight;
           });
           currentX += child.width;
       });
@@ -112,18 +113,17 @@ class TopologyVisualizer {
           Object.assign(positions, child.positions);
       });
 
-      const treeHeight = y + this.levelHeight + maxChildHeight;
-
       return {
           positions,
           width: Math.max(totalWidth, this.nodeSpacing),
-          height: treeHeight,
-          leftWidth: totalWidth / 2
+          height: this.levelHeight + maxChildHeight
       };
   }
 
   drawConnections(data, positions) {
       const ctx = this.ctx;
+      ctx.strokeStyle = '#a0aec0';
+      ctx.lineWidth = 2;
       Object.entries(data).forEach(([id, node]) => {
           if (node.parent) {
               const startPos = positions[node.parent];
@@ -131,8 +131,6 @@ class TopologyVisualizer {
               ctx.beginPath();
               ctx.moveTo(startPos.x, startPos.y);
               ctx.lineTo(endPos.x, endPos.y);
-              ctx.strokeStyle = '#a0aec0';
-              ctx.lineWidth = 1 * this.scale;
               ctx.stroke();
           }
       });
