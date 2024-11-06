@@ -10,7 +10,7 @@ def validate_node_data(node_data: Dict[str, Any]) -> None:
     try:
         # 检查必要字段
         logger.debug("检查必要字段")
-        required_fields = {'gps', 'load', 'channels', 'maxEirp'}
+        required_fields = {'gps', 'load', 'channels', 'max_eirp'}
         missing_fields = required_fields - set(node_data.keys())
         if missing_fields:
             logger.error(f"节点数据缺少必要字段: {missing_fields}")
