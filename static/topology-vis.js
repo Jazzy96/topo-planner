@@ -4,15 +4,15 @@ class TopologyVisualizer {
       this.ctx = canvas.getContext('2d');
       this.resize();
       this.scale = 1;
-      this.nodeSpacing = 80; // 增加节点间距
-      this.levelHeight = 120; // 增加层级高度
-      this.nodePadding = 20; // 节点周围的额外空间
+      this.nodeSpacing = 80;
+      this.levelHeight = 120;
+      this.nodePadding = 40;
       window.addEventListener('resize', () => this.resize());
   }
 
   resize() {
-      this.canvas.width = this.canvas.parentElement.clientWidth - 40;
-      this.canvas.height = Math.max(600, window.innerHeight - 200);
+      this.canvas.width = this.canvas.parentElement.clientWidth;
+      this.canvas.height = this.canvas.parentElement.clientHeight;
       if (this.lastData) {
           this.drawTopology(this.lastData);
       }
@@ -20,7 +20,7 @@ class TopologyVisualizer {
 
   drawNode(x, y, node, id) {
       const ctx = this.ctx;
-      const radius = 20; // 增加节点大小
+      const radius = 20;
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -52,8 +52,8 @@ class TopologyVisualizer {
       const { positions, width, height } = this.calculateNodePositions(data, root);
 
       // 计算缩放比例
-      const scaleX = this.canvas.width / (width + this.nodePadding * 2);
-      const scaleY = this.canvas.height / (height + this.nodePadding * 2);
+      const scaleX = (this.canvas.width - this.nodePadding * 2) / width;
+      const scaleY = (this.canvas.height - this.nodePadding * 2) / height;
       this.scale = Math.min(scaleX, scaleY, 1);
 
       // 应用缩放和平移
