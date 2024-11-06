@@ -33,7 +33,7 @@ def generate_topology(nodes_json: str, edges_json: str, config_json: str = None)
             
         # 生成拓扑
         generator = TopologyGenerator(config)
-        topology = generator.generate_topology(nodes, edges)
+        topology = generator.generate(nodes, edges)
         
         if not topology:
             raise TopologyGenerationError("无法生成有效的网络拓扑")

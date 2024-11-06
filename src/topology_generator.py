@@ -228,3 +228,26 @@ class TopologyGenerator:
         # 我们需要转换回正权重并返回(parent, child, weight)的格式
         neg_weight, parent, child = heapq.heappop(valid_edges)
         return (parent, child, -neg_weight)
+    
+    def generate(self, nodes: Dict[str, NodeInfo], edges: Dict[Tuple[str, str], EdgeInfo]) -> Dict[str, TopologyNode]:
+        """
+        生成网络拓扑的主入口方法
+        
+        Args:
+            nodes: 节点信息字典
+            edges: 边信息字典
+        
+        Returns:
+            生成的拓扑树结构
+        """
+        logger.info("开始生成拓扑")
+        
+        # 生成基础树结构
+        tree = self._generate_tree(nodes, edges)
+        
+        # 分配信道
+        channel_assigner = ChannelAssigner()
+        channel_assigner.assign_channels(tree)
+        
+        logger.info("拓扑生成完成")
+        return tree
