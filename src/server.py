@@ -11,7 +11,7 @@ class TopologyRequest(BaseModel):
     config_json: str = None
 
 @app.post("/generate_topology")
-async def handle_topology_request(request: TopologyRequest):
+def handle_topology_request(request: TopologyRequest):
     try:
         result = topology_generator(
             request.nodes_json,
@@ -27,5 +27,5 @@ if __name__ == "__main__":
         "src.server:app", 
         host="0.0.0.0", 
         port=8080,
-        reload=True  # 启用热重载
+        reload=True
     ) 
