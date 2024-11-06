@@ -3,6 +3,8 @@ package com.example.mesh;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -12,6 +14,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TopologyTest {
+    private static final Logger logger = LoggerFactory.getLogger(TopologyTest.class);
     private static final String API_URL = "http://localhost:8080/generate_topology";
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -84,7 +87,7 @@ public class TopologyTest {
             return mapper.writerWithDefaultPrettyPrinter()
                         .writeValueAsString(json);
         } catch (Exception e) {
-            logger.error("JSON格式化失败", e);
+            logger.error("JSON格式化失败: {}", e.getMessage());
             return jsonString;
         }
     }
@@ -122,7 +125,7 @@ public class TopologyTest {
         int rssi1_6gh = rssi1_6gl - (int)(Math.random() * 16); // 比6GL弱0-15dB
         int rssi2_6gh = rssi2_6gl - (int)(Math.random() * 16); // 比6GL弱0-15dB
         
-        // 确保所有RSSI值都在合理范围内（-40到-80之间）
+        // 确保所有RSSI值都在合理范围内（-40到-80���间）
         rssi1_6gh = Math.max(-80, Math.min(-40, rssi1_6gh));
         rssi2_6gh = Math.max(-80, Math.min(-40, rssi2_6gh));
         rssi1_6gl = Math.max(-80, Math.min(-40, rssi1_6gl));
