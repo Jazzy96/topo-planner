@@ -17,9 +17,14 @@ public class TopologyTest {
     private static final Logger logger = LoggerFactory.getLogger(TopologyTest.class);
     private static final String API_URL = "http://localhost:8080/generate_topology";
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static final int DEFAULT_NODE_COUNT = 10;
 
     @Test
     public void testTopologyGeneration() throws Exception {
+        // 打印当前使用的节点数量
+        System.out.println("Running test with node count: " + 
+            System.getProperty("nodeCount", String.valueOf(DEFAULT_NODE_COUNT)));
+            
         // 生成测试数据
         TestData testData = generateTestData();
         
@@ -142,7 +147,10 @@ public class TopologyTest {
         data.nodes = new HashMap<>();
         data.edges = new HashMap<>();
 
-        int nodeCount = 10;
+        // 从系统属性获取节点数量，如果未指定则使用默认值
+        int nodeCount = Integer.parseInt(
+            System.getProperty("nodeCount", String.valueOf(DEFAULT_NODE_COUNT))
+        );
         
         // 生成节点数据
         for (int i = 0; i < nodeCount; i++) {
