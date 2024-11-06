@@ -80,6 +80,23 @@ public class TopologyTest {
         public EdgeInfo() {}
     }
 
+    private EdgeInfo generateEdgeInfo() {
+        EdgeInfo edge = new EdgeInfo();
+        
+        // 生成第一个方向的RSSI值（-40到-80之间）
+        int rssi1_6gh = -40 - (int)(Math.random() * 40);
+        // 确保第二个方向的RSSI值与第一个方向的差值不超过20
+        int rssi2_6gh = rssi1_6gh + (int)(Math.random() * 41 - 20); // -20到+20的随机差值
+        
+        int rssi1_6gl = -40 - (int)(Math.random() * 40);
+        int rssi2_6gl = rssi1_6gl + (int)(Math.random() * 41 - 20);
+        
+        edge.rssi_6gh = Arrays.asList(rssi1_6gh, rssi2_6gh);
+        edge.rssi_6gl = Arrays.asList(rssi1_6gl, rssi2_6gl);
+        
+        return edge;
+    }
+
     private TestData generateTestData() {
         TestData data = new TestData();
         data.nodes = new HashMap<>();
@@ -142,19 +159,7 @@ public class TopologyTest {
         for (int i = 0; i < 5; i++) {
             for (int j = i + 1; j < 5; j++) {
                 String edgeKey = String.format("SN%d_SN%d", i, j);
-                EdgeInfo edge = new EdgeInfo();
-                
-                // 生成RSSI值（-40到-80之间）
-                edge.rssi_6gh = Arrays.asList(
-                    -40 - (int)(Math.random() * 40),
-                    -40 - (int)(Math.random() * 40)
-                );
-                edge.rssi_6gl = Arrays.asList(
-                    -40 - (int)(Math.random() * 40),
-                    -40 - (int)(Math.random() * 40)
-                );
-                
-                data.edges.put(edgeKey, edge);
+                data.edges.put(edgeKey, generateEdgeInfo());
             }
         }
 
