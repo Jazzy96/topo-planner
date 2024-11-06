@@ -8,7 +8,7 @@ from .channel_assigner import ChannelAssigner
 from .logger_config import setup_logger
 
 # 配置日志
-logger = setup_logger(__name__, "logs/topology_generator.log")
+logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
 
 class TopologyGenerator:
     def __init__(self, config: TopologyConfig):

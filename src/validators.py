@@ -2,7 +2,7 @@ from typing import Dict, Any
 from .logger_config import setup_logger
 from .exceptions import ValidationError
 
-logger = setup_logger(__name__, "logs/validators.log")
+logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
 
 def validate_node_data(node_data: Dict[str, Any]) -> None:
     logger.debug(f"开始验证节点数据: {node_data}")
