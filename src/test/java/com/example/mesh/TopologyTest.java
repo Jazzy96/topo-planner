@@ -83,13 +83,19 @@ public class TopologyTest {
     private EdgeInfo generateEdgeInfo() {
         EdgeInfo edge = new EdgeInfo();
         
-        // 生成第一个方向的RSSI值（-40到-80之间）
-        int rssi1_6gh = -40 - (int)(Math.random() * 40);
-        // 确保第二个方向的RSSI值与第一个方向的差值不超过20
-        int rssi2_6gh = rssi1_6gh + (int)(Math.random() * 41 - 20); // -20到+20的随机差值
+        // 首先生成6GL频段的RSSI值（通常信号更强）
+        int rssi1_6gl = -40 - (int)(Math.random() * 30); // -40到-70之间
+        int rssi2_6gl = rssi1_6gl + (int)(Math.random() * 21 - 10); // 与第一个方向相差-10到+10
         
-        int rssi1_6gl = -40 - (int)(Math.random() * 40);
-        int rssi2_6gl = rssi1_6gl + (int)(Math.random() * 41 - 20);
+        // 生成6GH频段的RSSI值（比6GL弱，但差值不超过15）
+        int rssi1_6gh = rssi1_6gl - (int)(Math.random() * 16); // 比6GL弱0-15dB
+        int rssi2_6gh = rssi2_6gl - (int)(Math.random() * 16); // 比6GL弱0-15dB
+        
+        // 确保所有RSSI值都在合理范围内（-40到-80之间）
+        rssi1_6gh = Math.max(-80, Math.min(-40, rssi1_6gh));
+        rssi2_6gh = Math.max(-80, Math.min(-40, rssi2_6gh));
+        rssi1_6gl = Math.max(-80, Math.min(-40, rssi1_6gl));
+        rssi2_6gl = Math.max(-80, Math.min(-40, rssi2_6gl));
         
         edge.rssi_6gh = Arrays.asList(rssi1_6gh, rssi2_6gh);
         edge.rssi_6gl = Arrays.asList(rssi1_6gl, rssi2_6gl);
