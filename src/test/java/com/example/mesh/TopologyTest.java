@@ -65,10 +65,22 @@ public class TopologyTest {
     // 添加用于格式化JSON的辅助方法
     private String prettyPrintJson(String jsonString) {
         try {
-            Object json = mapper.readValue(jsonString, Object.class);
+            // 先尝试解析转义后的JSON字符串
+            String unescapedJson = jsonString.replace("\\\"", "\"")
+                                           .replaceAll("^\"", "")
+                                           .replaceAll("\"$", "");
+            
+            // 如果是嵌套的JSON字符串，可能需要多次解析
+            Object json = mapper.readValue(unescapedJson, Object.class);
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
         } catch (Exception e) {
-            return jsonString; // 如果解析失败，返回原始字符串
+            // 如果上面的方法失败，尝试直接解析原始字符串
+            try {
+                Object json = mapper.readValue(jsonString, Object.class);
+                return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+            } catch (Exception e2) {
+                return jsonString; // 如果都失败了，返回原始字符串
+            }
         }
     }
 
