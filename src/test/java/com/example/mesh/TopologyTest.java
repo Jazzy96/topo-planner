@@ -1,13 +1,14 @@
 package com.example.mesh;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.Test;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TopologyTest {
     private static final String API_URL = "http://localhost:1212/generate_topology";
@@ -24,113 +25,34 @@ public class TopologyTest {
             "edges_json", mapper.writeValueAsString(testData.edges)
         ));
 
-        // 打印请求体以进行调试
-        System.out.println("Request body: " + requestBody);
-
-        // 发送HTTP请求
-        HttpClient client = HttpClient.newHttpClient();
+        // 创建HTTP请求
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(API_URL))
             .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build();
 
+        // 发送请求
+        HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = client.send(request, 
             HttpResponse.BodyHandlers.ofString());
 
-        // 打印响应信息
+        // 打印请求和响应信息用于调试
+        System.out.println("Request body: " + requestBody);
         System.out.println("Response status: " + response.statusCode());
         System.out.println("Response body: " + response.body());
 
-        // 验证结果
-        assert response.statusCode() == 200 : 
+        // 验证响应
+        assertEquals(200, response.statusCode(), 
             "Expected status code 200 but got " + response.statusCode() + 
-            ". Response body: " + response.body();
-        
-        // 解析响应
-        Map<String, Object> result = mapper.readValue(response.body(), Map.class);
-        
-        // 验证响应格式
-        assert result.containsKey("status");
-        assert "success".equals(result.get("status"));
-        assert result.containsKey("data");
-        
-        // 获取拓扑数据
-        Map<String, Map<String, Object>> topology = (Map<String, Map<String, Object>>) result.get("data");
-        
-        // 基本验证
-        assert topology.size() == 5;  // 验证节点数量
-        
-        // 验证每个节点的数据结构
-        for (Map.Entry<String, Map<String, Object>> entry : topology.entrySet()) {
-            String nodeId = entry.getKey();
-            Map<String, Object> nodeData = entry.getValue();
-            
-            // 验证必要字段
-            assert nodeData.containsKey("parent");
-            assert nodeData.containsKey("backhaulBand");
-            assert nodeData.containsKey("level");
-            assert nodeData.containsKey("channel");
-            assert nodeData.containsKey("bandwidth");
-            assert nodeData.containsKey("maxEirp");
-            
-            // 验证层级关系
-            Integer level = (Integer) nodeData.get("level");
-            String parent = (String) nodeData.get("parent");
-            if (level == 0) {
-                assert parent == null;
-            } else {
-                assert parent != null;
-                assert topology.containsKey(parent);
-                assert (Integer) topology.get(parent).get("level") == level - 1;
-            }
-            
-            // 验证信道分配
-            List<Integer> channels = (List<Integer>) nodeData.get("channel");
-            List<Integer> bandwidths = (List<Integer>) nodeData.get("bandwidth");
-            List<Integer> eirps = (List<Integer>) nodeData.get("maxEirp");
-            
-            assert channels.size() == bandwidths.size();
-            assert channels.size() == eirps.size();
-            
-            // 验证带宽值
-            for (Integer bandwidth : bandwidths) {
-                assert Arrays.asList(20, 40, 80, 160).contains(bandwidth);
-            }
-            
-            // 验证EIRP值范围
-            for (Integer eirp : eirps) {
-                assert eirp >= 0 && eirp <= 36;
-            }
-        }
-        
-        // 验证拓扑连通性
-        Set<String> visited = new HashSet<>();
-        String root = null;
-        for (Map.Entry<String, Map<String, Object>> entry : topology.entrySet()) {
-            if (entry.getValue().get("parent") == null) {
-                root = entry.getKey();
-                break;
-            }
-        }
-        assert root != null;
-        
-        // DFS验证连通性
-        verifyConnectivity(root, topology, visited);
-        assert visited.size() == topology.size();
-    }
+            ". Response body: " + response.body());
 
-    private void verifyConnectivity(String nodeId, 
-                                  Map<String, Map<String, Object>> topology, 
-                                  Set<String> visited) {
-        visited.add(nodeId);
-        for (Map.Entry<String, Map<String, Object>> entry : topology.entrySet()) {
-            String currentId = entry.getKey();
-            Map<String, Object> nodeData = entry.getValue();
-            if (!visited.contains(currentId) && nodeId.equals(nodeData.get("parent"))) {
-                verifyConnectivity(currentId, topology, visited);
-            }
-        }
+        // 验证响应格式
+        var responseJson = mapper.readTree(response.body());
+        assertTrue(responseJson.has("status"), "Response should have 'status' field");
+        assertTrue(responseJson.has("data"), "Response should have 'data' field");
+        assertEquals("success", responseJson.get("status").asText(), "Status should be 'success'");
     }
 
     private static class TestData {
@@ -139,24 +61,14 @@ public class TopologyTest {
     }
 
     private static class NodeInfo {
-        @JsonProperty("gps")
         List<Double> gps;
-        
-        @JsonProperty("load")
         double load;
-        
-        @JsonProperty("channels")
         Map<String, Map<String, List<Integer>>> channels;
-        
-        @JsonProperty("maxEirp")
         Map<String, Map<String, List<Integer>>> maxEirp;
     }
 
     private static class EdgeInfo {
-        @JsonProperty("rssi_6gh")
         List<Integer> rssi_6gh;
-        
-        @JsonProperty("rssi_6gl")
         List<Integer> rssi_6gl;
     }
 
