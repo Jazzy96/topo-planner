@@ -48,19 +48,18 @@ class TopologyVisualizer {
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       const root = Object.entries(data).find(([_, node]) => node.parent === null)[0];
-      const { positions, treeWidth } = this.calculateNodePositions(data, root);
+      const { positions, treeWidth, treeHeight } = this.calculateNodePositions(data, root);
 
       // 计算缩放比例
-      const bounds = this.calculateBounds(positions);
-      const scaleX = this.canvas.width / (bounds.maxX - bounds.minX + 100);
-      const scaleY = this.canvas.height / (bounds.maxY - bounds.minY + 100);
+      const scaleX = (this.canvas.width - 40) / treeWidth;
+      const scaleY = (this.canvas.height - 40) / treeHeight;
       this.scale = Math.min(scaleX, scaleY, 1); // 限制最大缩放为1
 
       // 应用缩放和平移
       ctx.save();
       ctx.translate(
           (this.canvas.width - treeWidth * this.scale) / 2,
-          (this.canvas.height - (bounds.maxY - bounds.minY) * this.scale) / 2
+          (this.canvas.height - treeHeight * this.scale) / 2
       );
       ctx.scale(this.scale, this.scale);
 
@@ -82,13 +81,15 @@ class TopologyVisualizer {
 
       if (children.length === 0) {
           positions[rootId] = { x, y };
-          return { positions, width: 0, leftWidth: 0 };
+          return { positions, width: this.nodeSpacing, height: this.levelHeight, leftWidth: this.nodeSpacing / 2 };
       }
 
       let totalWidth = 0;
+      let maxChildHeight = 0;
       let childrenData = children.map(childId => {
           const childResult = this.calculateNodePositions(data, childId, 0, y + this.levelHeight);
           totalWidth += childResult.width;
+          maxChildHeight = Math.max(maxChildHeight, childResult.height);
           return { id: childId, ...childResult };
       });
 
@@ -100,7 +101,7 @@ class TopologyVisualizer {
           Object.entries(child.positions).forEach(([id, pos]) => {
               pos.x += currentX;
           });
-          currentX += child.width + this.nodeSpacing;
+          currentX += child.width;
       });
 
       // 设置当前节点的位置
@@ -111,22 +112,14 @@ class TopologyVisualizer {
           Object.assign(positions, child.positions);
       });
 
+      const treeHeight = y + this.levelHeight + maxChildHeight;
+
       return {
           positions,
           width: Math.max(totalWidth, this.nodeSpacing),
+          height: treeHeight,
           leftWidth: totalWidth / 2
       };
-  }
-
-  calculateBounds(positions) {
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      Object.values(positions).forEach(pos => {
-          minX = Math.min(minX, pos.x);
-          minY = Math.min(minY, pos.y);
-          maxX = Math.max(maxX, pos.x);
-          maxY = Math.max(maxY, pos.y);
-      });
-      return { minX, minY, maxX, maxY };
   }
 
   drawConnections(data, positions) {
