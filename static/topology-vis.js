@@ -4,6 +4,8 @@ class TopologyVisualizer {
       this.ctx = canvas.getContext('2d');
       this.resize();
       this.scale = 1;
+      this.nodeSpacing = 50; // 同级节点之间的最小间距
+      this.levelHeight = 100; // 层级之间的垂直间距
       window.addEventListener('resize', () => this.resize());
   }
 
@@ -17,7 +19,7 @@ class TopologyVisualizer {
 
   drawNode(x, y, node, id) {
       const ctx = this.ctx;
-      const radius = 15 * this.scale; // 减小节点尺寸
+      const radius = 15 * this.scale;
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -46,10 +48,10 @@ class TopologyVisualizer {
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       const root = Object.entries(data).find(([_, node]) => node.parent === null)[0];
-      const nodePositions = this.calculateNodePositions(data, root);
+      const { positions, treeWidth } = this.calculateNodePositions(data, root);
 
       // 计算缩放比例
-      const bounds = this.calculateBounds(nodePositions);
+      const bounds = this.calculateBounds(positions);
       const scaleX = this.canvas.width / (bounds.maxX - bounds.minX + 100);
       const scaleY = this.canvas.height / (bounds.maxY - bounds.minY + 100);
       this.scale = Math.min(scaleX, scaleY, 1); // 限制最大缩放为1
@@ -57,36 +59,63 @@ class TopologyVisualizer {
       // 应用缩放和平移
       ctx.save();
       ctx.translate(
-          (this.canvas.width - (bounds.maxX - bounds.minX) * this.scale) / 2 - bounds.minX * this.scale,
-          (this.canvas.height - (bounds.maxY - bounds.minY) * this.scale) / 2 - bounds.minY * this.scale
+          (this.canvas.width - treeWidth * this.scale) / 2,
+          (this.canvas.height - (bounds.maxY - bounds.minY) * this.scale) / 2
       );
       ctx.scale(this.scale, this.scale);
 
-      this.drawConnections(data, nodePositions);
-      Object.entries(nodePositions).forEach(([id, pos]) => {
+      this.drawConnections(data, positions);
+      Object.entries(positions).forEach(([id, pos]) => {
           this.drawNode(pos.x, pos.y, data[id], id);
       });
 
       ctx.restore();
   }
 
-  calculateNodePositions(data, rootId, x = 0, y = 0, level = 0) {
+  calculateNodePositions(data, rootId, x = 0, y = 0) {
       const positions = {};
       const node = data[rootId];
-      positions[rootId] = { x, y };
+      
+      const children = Object.entries(data)
+          .filter(([_, n]) => n.parent === rootId)
+          .map(([id, _]) => id);
 
-      const children = Object.entries(data).filter(([_, n]) => n.parent === rootId);
-      if (children.length > 0) {
-          const levelWidth = 200; // 调整此值以改变节点之间的水平间距
-          const startX = x - (levelWidth * (children.length - 1)) / 2;
-          children.forEach(([childId], index) => {
-              const childX = startX + levelWidth * index;
-              const childY = y + 100; // 调整此值以改变层级之间的垂直间距
-              Object.assign(positions, this.calculateNodePositions(data, childId, childX, childY, level + 1));
-          });
+      if (children.length === 0) {
+          positions[rootId] = { x, y };
+          return { positions, width: 0, leftWidth: 0 };
       }
 
-      return positions;
+      let totalWidth = 0;
+      let childrenData = children.map(childId => {
+          const childResult = this.calculateNodePositions(data, childId, 0, y + this.levelHeight);
+          totalWidth += childResult.width;
+          return { id: childId, ...childResult };
+      });
+
+      // 调整子节点的x坐标
+      let currentX = x - totalWidth / 2;
+      childrenData.forEach(child => {
+          const childCenterX = currentX + child.leftWidth;
+          child.positions[child.id].x += childCenterX;
+          Object.entries(child.positions).forEach(([id, pos]) => {
+              pos.x += currentX;
+          });
+          currentX += child.width + this.nodeSpacing;
+      });
+
+      // 设置当前节点的位置
+      positions[rootId] = { x, y };
+
+      // 合并所有子节点的位置
+      childrenData.forEach(child => {
+          Object.assign(positions, child.positions);
+      });
+
+      return {
+          positions,
+          width: Math.max(totalWidth, this.nodeSpacing),
+          leftWidth: totalWidth / 2
+      };
   }
 
   calculateBounds(positions) {
