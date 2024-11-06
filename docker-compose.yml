@@ -1,0 +1,13 @@
+version: '3'
+services:
+  topo-planner:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/log/topo-planner:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3" 

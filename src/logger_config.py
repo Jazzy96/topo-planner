@@ -19,7 +19,18 @@ def setup_logger(name: str, log_file: str = None) -> logging.Logger:
     # 设置格式器
     ch.setFormatter(formatter)
     
-    # 添加处理器
+    # 添加控制台处理器
     logger.addHandler(ch)
+    
+    # 如果指定了日志文件，添加文件处理器
+    if log_file:
+        # 确保日志目录存在
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        
+        # 创建文件处理器
+        fh = logging.FileHandler(log_file)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
     
     return logger 

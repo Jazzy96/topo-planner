@@ -5,10 +5,10 @@ import uvicorn
 import logging
 from .api import generate_topology as topology_generator
 import json
+from .logger_config import setup_logger
 
 # 配置日志
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, '/app/logs/topo-planner.log')
 
 app = FastAPI()
 
