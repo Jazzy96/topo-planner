@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
-from .api import generate_mesh_topology
+from .api import generate_topology
 
 app = FastAPI()
 
@@ -13,7 +13,7 @@ class TopologyRequest(BaseModel):
 @app.post("/generate_topology")
 async def generate_topology(request: TopologyRequest):
     try:
-        result = generate_mesh_topology(
+        result = generate_topology(
             request.nodes_json,
             request.edges_json,
             request.config_json
@@ -23,4 +23,9 @@ async def generate_topology(request: TopologyRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080) 
+    uvicorn.run(
+        "src.server:app", 
+        host="0.0.0.0", 
+        port=8080,
+        reload=True  # 启用热重载
+    ) 

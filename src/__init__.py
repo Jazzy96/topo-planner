@@ -1,4 +1,4 @@
-from .api import generate_mesh_topology
+from .api import generate_topology
 from .config import TopologyConfig
 from .exceptions import (
     MeshTopologyError,
@@ -9,7 +9,7 @@ from .exceptions import (
 )
 
 __all__ = [
-    'generate_mesh_topology',
+    'generate_topology',
     'TopologyConfig',
     'MeshTopologyError',
     'InvalidInputError',
