@@ -122,10 +122,10 @@ public class TopologyTest {
         int rssi2_6gl = rssi1_6gl + (int)(Math.random() * 21 - 10); // 与第一个方向相差-10到+10
         
         // 生成6GH频段的RSSI值（比6GL弱，但差值不超过15）
-        int rssi1_6gh = rssi1_6gl - (int)(Math.random() * 16); // 比6GL弱0-15dB
-        int rssi2_6gh = rssi2_6gl - (int)(Math.random() * 16); // 比6GL弱0-15dB
+        int rssi1_6gh = rssi1_6gl - (int)(Math.random() * 10); // 比6GL弱0-10dB
+        int rssi2_6gh = rssi2_6gl - (int)(Math.random() * 10); // 比6GL弱0-10dB
         
-        // 确保所有RSSI值都在合理范围内（-40到-80���间）
+        // 确保所有RSSI值都在合理范围内（-40到-80间）
         rssi1_6gh = Math.max(-80, Math.min(-40, rssi1_6gh));
         rssi2_6gh = Math.max(-80, Math.min(-40, rssi2_6gh));
         rssi1_6gl = Math.max(-80, Math.min(-40, rssi1_6gl));
@@ -142,8 +142,10 @@ public class TopologyTest {
         data.nodes = new HashMap<>();
         data.edges = new HashMap<>();
 
+        int nodeCount = 10;
+        
         // 生成节点数据
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < nodeCount; i++) {
             String nodeId = "SN" + i;
             NodeInfo node = new NodeInfo();
             
@@ -203,9 +205,9 @@ public class TopologyTest {
             data.nodes.put(nodeId, node);
         }
 
-        // 生成边数据
-        for (int i = 0; i < 5; i++) {
-            for (int j = i + 1; j < 5; j++) {
+        // 生成边数据 - 自动适应新的节点数量
+        for (int i = 0; i < nodeCount; i++) {
+            for (int j = i + 1; j < nodeCount; j++) {
                 String edgeKey = String.format("SN%d_SN%d", i, j);
                 data.edges.put(edgeKey, generateEdgeInfo());
             }
