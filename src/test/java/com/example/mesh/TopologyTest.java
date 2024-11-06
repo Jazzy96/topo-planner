@@ -25,7 +25,7 @@ public class TopologyTest {
             "edges_json", mapper.writeValueAsString(testData.edges)
         ));
 
-        // 创建HTTP请求 - 移除 Connection 头
+        // 创建HTTP请求
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(API_URL))
             .header("Content-Type", "application/json")
@@ -33,7 +33,7 @@ public class TopologyTest {
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build();
 
-        // 创建一个新的 HttpClient，设置属性来防止连接保持
+        // 创建一个新的 HttpClient
         HttpClient client = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
             .build();
@@ -42,10 +42,12 @@ public class TopologyTest {
         HttpResponse<String> response = client.send(request, 
             HttpResponse.BodyHandlers.ofString());
 
-        // 打印请求和响应信息用于调试
-        System.out.println("Request body: " + requestBody);
-        System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body: " + response.body());
+        // 打印格式化的请求和响应信息
+        System.out.println("Request body:");
+        System.out.println(prettyPrintJson(requestBody));
+        System.out.println("\nResponse status: " + response.statusCode());
+        System.out.println("Response body:");
+        System.out.println(prettyPrintJson(response.body()));
 
         // 验证响应
         assertEquals(200, response.statusCode(), 
@@ -59,6 +61,16 @@ public class TopologyTest {
         assertEquals("success", responseJson.get("status").asText(), "Status should be 'success'");
     }
 
+    // 添加用于格式化JSON的辅助方法
+    private String prettyPrintJson(String jsonString) {
+        try {
+            Object json = mapper.readValue(jsonString, Object.class);
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+        } catch (Exception e) {
+            return jsonString; // 如果解析失败，返回原始字符串
+        }
+    }
+
     private static class TestData {
         public Map<String, NodeInfo> nodes;
         public Map<String, EdgeInfo> edges;
@@ -68,6 +80,7 @@ public class TopologyTest {
         public List<Double> gps;
         public double load;
         public Map<String, Map<String, List<Integer>>> channels;
+        @JsonProperty("max_eirp")
         public Map<String, Map<String, List<Integer>>> maxEirp;
 
         public NodeInfo() {}
