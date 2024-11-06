@@ -7,6 +7,8 @@ from .topology_generator import TopologyGenerator
 from .exceptions import MeshTopologyError, InvalidInputError, TopologyGenerationError
 from .validators import validate_topology_input
 from .logger_config import setup_logger
+import os
+from datetime import datetime
 
 logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
 
@@ -50,6 +52,12 @@ def generate_topology(nodes_json: str, edges_json: str, config_json: str = None)
             }
             for node_id, node in topology.items()
         }
+
+        node_count = len(nodes)
+        save_topology_result(json.dumps({
+            'status': 'success',
+            'data': result
+        }), node_count)
         
         return json.dumps({
             'status': 'success',
@@ -70,3 +78,18 @@ def generate_topology(nodes_json: str, edges_json: str, config_json: str = None)
             'error_type': 'UnexpectedError',
             'message': '系统内部错误'
         })
+
+def save_topology_result(result: str, node_count: int) -> str:
+    """保存拓扑结果到文件"""
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"topology_{node_count}nodes_{timestamp}.json"
+    result_dir = "/app/results"
+    
+    # 确保目录存在
+    os.makedirs(result_dir, exist_ok=True)
+    
+    filepath = os.path.join(result_dir, filename)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(result)
+        
+    return filename

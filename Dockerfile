@@ -14,7 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/logs && \
     chmod 777 /app/logs && \
     mkdir -p /var/log/topo-planner && \
-    chmod 777 /var/log/topo-planner
+    chmod 777 /var/log/topo-planner && \
+    mkdir -p /app/static && \
+    mkdir -p /app/results && \
+    chmod 777 /app/results 
 
 # 复制源代码
 COPY src/ ./src/
@@ -27,4 +30,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
 
 # 启动命令
-CMD ["python", "-m", "src.server"] 
+CMD ["python", "-m", "src.server"]

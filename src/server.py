@@ -6,6 +6,10 @@ import logging
 from .api import generate_topology as topology_generator
 import json
 from .logger_config import setup_logger
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import os
+from typing import List, Dict
 
 # 配置日志
 logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
@@ -20,6 +24,40 @@ app.add_middleware(
     allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["Content-Type", "Accept", "Authorization"],
 )
+
+# 在现有路由之前添加
+app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+async def get_index():
+    return open('/app/static/index.html').read()
+
+@app.get("/api/results")
+async def get_results():
+    result_dir = "/app/results"
+    results = []
+    
+    if os.path.exists(result_dir):
+        for file in sorted(os.listdir(result_dir), reverse=True):
+            if file.endswith('.json'):
+                filepath = os.path.join(result_dir, file)
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                results.append({
+                    'filename': file,
+                    'data': data
+                })
+    
+    return results
+
+@app.get("/api/result/{filename}")
+async def get_result(filename: str):
+    filepath = os.path.join("/app/results", filename)
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail="Result not found")
+        
+    with open(filepath, 'r') as f:
+        return json.load(f)
 
 class TopologyRequest(BaseModel):
     nodes_json: str
