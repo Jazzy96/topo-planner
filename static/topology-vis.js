@@ -3,6 +3,7 @@ class TopologyVisualizer {
       this.canvas = canvas;
       this.ctx = canvas.getContext('2d');
       this.resize();
+      this.scale = 1;
       window.addEventListener('resize', () => this.resize());
   }
 
@@ -16,31 +17,27 @@ class TopologyVisualizer {
 
   drawNode(x, y, node, id) {
       const ctx = this.ctx;
-      const radius = 25;
+      const radius = 15 * this.scale; // 减小节点尺寸
       
-      // 绘制节点圆圈
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fillStyle = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
       ctx.fill();
       ctx.strokeStyle = '#2c5282';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1 * this.scale;
       ctx.stroke();
       
-      // 绘制节点ID
       ctx.fillStyle = '#2d3748';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 14px Arial';
+      ctx.font = `bold ${10 * this.scale}px Arial`;
       ctx.fillText(id, x, y);
       
-      // 绘制信道和带宽信息
-      ctx.fillStyle = '#2d3748';
-      ctx.font = '12px Arial';
+      ctx.font = `${8 * this.scale}px Arial`;
       const channelInfo = `CH:${node.channel.join(',')}`;
       const bwInfo = `BW:${node.bandwidth.join(',')}`;
-      ctx.fillText(channelInfo, x, y + radius + 15);
-      ctx.fillText(bwInfo, x, y + radius + 30);
+      ctx.fillText(channelInfo, x, y + radius + 10 * this.scale);
+      ctx.fillText(bwInfo, x, y + radius + 20 * this.scale);
   }
 
   drawTopology(data) {
@@ -48,36 +45,59 @@ class TopologyVisualizer {
       const ctx = this.ctx;
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-      // 找到根节点
       const root = Object.entries(data).find(([_, node]) => node.parent === null)[0];
-      
-      // 计算节点位置
       const nodePositions = this.calculateNodePositions(data, root);
 
-      // 绘制连线和节点
+      // 计算缩放比例
+      const bounds = this.calculateBounds(nodePositions);
+      const scaleX = this.canvas.width / (bounds.maxX - bounds.minX + 100);
+      const scaleY = this.canvas.height / (bounds.maxY - bounds.minY + 100);
+      this.scale = Math.min(scaleX, scaleY, 1); // 限制最大缩放为1
+
+      // 应用缩放和平移
+      ctx.save();
+      ctx.translate(
+          (this.canvas.width - (bounds.maxX - bounds.minX) * this.scale) / 2 - bounds.minX * this.scale,
+          (this.canvas.height - (bounds.maxY - bounds.minY) * this.scale) / 2 - bounds.minY * this.scale
+      );
+      ctx.scale(this.scale, this.scale);
+
       this.drawConnections(data, nodePositions);
       Object.entries(nodePositions).forEach(([id, pos]) => {
           this.drawNode(pos.x, pos.y, data[id], id);
       });
+
+      ctx.restore();
   }
 
-  calculateNodePositions(data, rootId, x = this.canvas.width / 2, y = 50, level = 0) {
+  calculateNodePositions(data, rootId, x = 0, y = 0, level = 0) {
       const positions = {};
       const node = data[rootId];
       positions[rootId] = { x, y };
 
       const children = Object.entries(data).filter(([_, n]) => n.parent === rootId);
       if (children.length > 0) {
-          const levelWidth = this.canvas.width / (level + 2);
+          const levelWidth = 200; // 调整此值以改变节点之间的水平间距
           const startX = x - (levelWidth * (children.length - 1)) / 2;
           children.forEach(([childId], index) => {
               const childX = startX + levelWidth * index;
-              const childY = y + 100;
+              const childY = y + 100; // 调整此值以改变层级之间的垂直间距
               Object.assign(positions, this.calculateNodePositions(data, childId, childX, childY, level + 1));
           });
       }
 
       return positions;
+  }
+
+  calculateBounds(positions) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      Object.values(positions).forEach(pos => {
+          minX = Math.min(minX, pos.x);
+          minY = Math.min(minY, pos.y);
+          maxX = Math.max(maxX, pos.x);
+          maxY = Math.max(maxY, pos.y);
+      });
+      return { minX, minY, maxX, maxY };
   }
 
   drawConnections(data, positions) {
@@ -90,7 +110,7 @@ class TopologyVisualizer {
               ctx.moveTo(startPos.x, startPos.y);
               ctx.lineTo(endPos.x, endPos.y);
               ctx.strokeStyle = '#a0aec0';
-              ctx.lineWidth = 2;
+              ctx.lineWidth = 1 * this.scale;
               ctx.stroke();
           }
       });
