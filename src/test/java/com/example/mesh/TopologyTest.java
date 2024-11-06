@@ -56,20 +56,24 @@ public class TopologyTest {
     }
 
     private static class TestData {
-        Map<String, NodeInfo> nodes;
-        Map<String, EdgeInfo> edges;
+        public Map<String, NodeInfo> nodes;
+        public Map<String, EdgeInfo> edges;
     }
 
     private static class NodeInfo {
-        List<Double> gps;
-        double load;
-        Map<String, Map<String, List<Integer>>> channels;
-        Map<String, Map<String, List<Integer>>> maxEirp;
+        public List<Double> gps;
+        public double load;
+        public Map<String, Map<String, List<Integer>>> channels;
+        public Map<String, Map<String, List<Integer>>> maxEirp;
+
+        public NodeInfo() {}
     }
 
     private static class EdgeInfo {
-        List<Integer> rssi_6gh;
-        List<Integer> rssi_6gl;
+        public List<Integer> rssi_6gh;
+        public List<Integer> rssi_6gl;
+
+        public EdgeInfo() {}
     }
 
     private TestData generateTestData() {
