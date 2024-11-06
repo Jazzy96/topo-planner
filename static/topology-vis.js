@@ -11,8 +11,9 @@ class TopologyVisualizer {
   }
 
   resize() {
-      this.canvas.width = this.canvas.parentElement.clientWidth;
-      this.canvas.height = this.canvas.parentElement.clientHeight;
+      const container = this.canvas.parentElement;
+      this.canvas.width = container.clientWidth;
+      this.canvas.height = container.clientHeight;
       if (this.lastData) {
           this.drawTopology(this.lastData);
       }

@@ -16,6 +16,10 @@
             background-color: #4299e1;
             color: white;
         }
+        #canvas-container {
+            width: 100%;
+            height: calc(100vh - 2rem); /* 减去上下边距 */
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -27,7 +31,9 @@
                 <div id="resultsList" class="space-y-2 max-h-96 overflow-y-auto"></div>
             </div>
             <div class="w-full md:w-2/3 bg-white rounded-lg shadow-md p-4">
-                <canvas id="canvas" class="w-full border border-gray-300 rounded"></canvas>
+                <div id="canvas-container">
+                    <canvas id="canvas" class="w-full h-full border border-gray-300 rounded"></canvas>
+                </div>
             </div>
         </div>
     </div>
