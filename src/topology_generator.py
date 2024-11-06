@@ -245,9 +245,9 @@ class TopologyGenerator:
         # 生成基础树结构
         tree = self._generate_tree(nodes, edges)
         
-        # 分配信道，传入配置参数
+        # 分配信道，传入配置参数和所需的节点、边信息
         channel_assigner = ChannelAssigner(self.config)
-        channel_assigner.assign_channels(tree)
+        channel_assigner.assign_channels(tree, nodes, edges)
         
         logger.info("拓扑生成完成")
         return tree
