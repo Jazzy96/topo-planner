@@ -189,6 +189,14 @@ public class TopologyTest {
             node.channels.put("6GL", channels6gl);
             node.maxEirp.put("6GL", eirp6gl);
             
+            // 打印每个节点的数据
+            try {
+                System.out.println("Generated node " + nodeId + ": " + 
+                    mapper.writeValueAsString(node));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
             data.nodes.put(nodeId, node);
         }
 
