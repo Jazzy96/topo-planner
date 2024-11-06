@@ -28,7 +28,7 @@ def setup_logger(name: str, log_file: str = None) -> logging.Logger:
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         
         # 创建文件处理器
-        fh = logging.FileHandler(log_file)
+        fh = logging.FileHandler(log_file, encoding='utf-8')
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         logger.addHandler(fh)

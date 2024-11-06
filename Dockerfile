@@ -10,8 +10,11 @@ COPY requirements.txt .
 # 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 创建日志目录
-RUN mkdir -p /app/logs && chmod 777 /app/logs
+# 创建日志目录并设置适当的权限
+RUN mkdir -p /app/logs && \
+    chmod 777 /app/logs && \
+    mkdir -p /var/log/topo-planner && \
+    chmod 777 /var/log/topo-planner
 
 # 复制源代码
 COPY src/ ./src/

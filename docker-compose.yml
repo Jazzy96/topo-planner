@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - /var/log/topo-planner:/app/logs
+      - /var/log/topo-planner:/var/log/topo-planner
     logging:
       driver: "json-file"
       options:

@@ -8,7 +8,7 @@ import json
 from .logger_config import setup_logger
 
 # 配置日志
-logger = setup_logger(__name__, '/app/logs/topo-planner.log')
+logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
 
 app = FastAPI()
 
