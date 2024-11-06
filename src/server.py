@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import uvicorn
 import logging
 from .api import generate_topology as topology_generator
+import json
 
 # 配置日志
 logging.basicConfig(level=logging.DEBUG)
@@ -16,8 +17,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Authorization"],
 )
 
 class TopologyRequest(BaseModel):
@@ -37,12 +38,14 @@ async def handle_topology_request(request: TopologyRequest):
             request.config_json
         )
         
-        logger.debug(f"生成结果: {result}")
-        return {"status": "success", "data": result}
+        return json.loads(result)
     
     except Exception as e:
         logger.error(f"处理请求时发生错误: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=400, detail=str(e))
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 @app.get("/health")
 async def health_check():
