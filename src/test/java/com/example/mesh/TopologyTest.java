@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.*;
 
 public class TopologyTest {
-    private static final String API_URL = "http://localhost:8080/generate_topology";
+    private static final String API_URL = "http://localhost:1212/generate_topology";
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Test
