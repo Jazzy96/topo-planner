@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
-from .api import generate_topology
+from .api import generate_topology as topology_generator
 
 app = FastAPI()
 
@@ -11,9 +11,9 @@ class TopologyRequest(BaseModel):
     config_json: str = None
 
 @app.post("/generate_topology")
-async def generate_topology(request: TopologyRequest):
+async def handle_topology_request(request: TopologyRequest):
     try:
-        result = generate_topology(
+        result = topology_generator(
             request.nodes_json,
             request.edges_json,
             request.config_json
