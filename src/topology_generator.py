@@ -5,18 +5,22 @@ from .models import NodeInfo, EdgeInfo, TopologyNode
 from .exceptions import TopologyGenerationError
 import logging
 from .channel_assigner import ChannelAssigner
+from .logger_config import setup_logger
 
 # 配置日志
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, "logs/topology_generator.log")
 
 class TopologyGenerator:
     def __init__(self, config: TopologyConfig):
         self.config = config
+        logger.info(f"初始化拓扑生成器，配置参数: {config}")
     
     def _predict_throughput(self, rssi: int) -> float:
         """根据RSSI预测吞吐量的简单线性模型"""
-        # 这里使用简单线性模型，实际可以根据测试数据建立更准确的模型
-        return max(0, (rssi + 100) * 10)  # 简单示例：RSSI=-70时吞吐量为300Mbps
+        logger.debug(f"预测吞吐量 - 输入RSSI: {rssi}")
+        throughput = max(0, (rssi + 100) * 10)  # 简单示例：RSSI=-70时吞吐量为300Mbps
+        logger.debug(f"预测吞吐量结果: {throughput}Mbps")
+        return throughput
     
     def _calculate_edge_weight(self,
                              parent: str,
@@ -25,27 +29,35 @@ class TopologyGenerator:
                              edges: Dict[Tuple[str, str], EdgeInfo],
                              current_tree: Dict[str, TopologyNode]) -> float:
         """计算边的权重"""
+        logger.debug(f"计算边权重 - 父节点: {parent}, 子节点: {child}")
+        
         edge = edges.get((parent, child)) or edges.get((child, parent))
         if not edge:
+            logger.warning(f"未找到边连接: {parent}-{child}")
             return float('-inf')
-            
+        
         # 获取最好的RSSI值
         rssi = max(edge.rssi_6gh + edge.rssi_6gl)
+        logger.debug(f"最大RSSI值: {rssi}")
         
         # 计算预测吞吐量
         throughput = self._predict_throughput(rssi)
+        logger.debug(f"预测吞吐量: {throughput}")
         
         # 计算节点负载
         total_load = nodes[parent].load + nodes[child].load
+        logger.debug(f"总负载: {total_load}")
         
         # 计算父节点跳数
         parent_hops = current_tree[parent].level if parent in current_tree else 0
+        logger.debug(f"父节点跳数: {parent_hops}")
         
         # 加权计算
         weight = (self.config.THROUGHPUT_WEIGHT * throughput +
                  self.config.LOAD_WEIGHT * total_load +
                  self.config.HOP_WEIGHT * parent_hops)
-                 
+        
+        logger.info(f"边权重计算完成: {parent}-{child}, 权重={weight}")
         return weight
     
     def _check_rssi_constraint(self, edge: EdgeInfo) -> bool:

@@ -11,8 +11,9 @@ from .exceptions import (
     ChannelAssignmentError,
     ValidationError
 )
+from .logger_config import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__, "logs/api.log")
 
 def generate_topology(nodes_json: str, edges_json: str, config_json: str = None) -> str:
     """
@@ -26,12 +27,19 @@ def generate_topology(nodes_json: str, edges_json: str, config_json: str = None)
     Returns:
         拓扑结果的JSON字符串
     """
+    logger.info("开始生成拓扑")
+    logger.debug(f"输入参数: nodes_json长度={len(nodes_json)}, "
+                f"edges_json长度={len(edges_json)}, "
+                f"config_json={'已提供' if config_json else '未提供'}")
+    
     try:
         # 解析输入
         try:
             nodes_data = json.loads(nodes_json)
             edges_data = json.loads(edges_json)
+            logger.debug(f"成功解析JSON数据: {len(nodes_data)}个节点, {len(edges_data)}条边")
         except json.JSONDecodeError as e:
+            logger.error(f"JSON解析失败: {e}")
             raise InvalidInputError(f"JSON解析错误: {str(e)}")
             
         # 验证输入数据
@@ -120,7 +128,7 @@ def validate_node_data(node_data: Dict[str, Any]) -> None:
     验证节点数据的完整性和有效性
     
     Args:
-        node_data: 节点��据字典
+        node_data: 节点据字典
         
     Raises:
         ValidationError: 当数据验证失败时抛出
