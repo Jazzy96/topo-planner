@@ -24,6 +24,9 @@ public class TopologyTest {
             "edges_json", mapper.writeValueAsString(testData.edges)
         ));
 
+        // 打印请求体以进行调试
+        System.out.println("Request body: " + requestBody);
+
         // 发送HTTP请求
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
@@ -35,8 +38,14 @@ public class TopologyTest {
         HttpResponse<String> response = client.send(request, 
             HttpResponse.BodyHandlers.ofString());
 
+        // 打印响应信息
+        System.out.println("Response status: " + response.statusCode());
+        System.out.println("Response body: " + response.body());
+
         // 验证结果
-        assert response.statusCode() == 200;
+        assert response.statusCode() == 200 : 
+            "Expected status code 200 but got " + response.statusCode() + 
+            ". Response body: " + response.body();
         
         // 解析响应
         Map<String, Object> result = mapper.readValue(response.body(), Map.class);
