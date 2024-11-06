@@ -1,6 +1,6 @@
 version: '3'
 services:
-  topo-planner:
+  app:
     container_name: topo-planner
     build: .
     ports:
