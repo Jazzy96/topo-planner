@@ -25,17 +25,20 @@ public class TopologyTest {
             "edges_json", mapper.writeValueAsString(testData.edges)
         ));
 
-        // 创建HTTP请求
+        // 创建HTTP请求 - 移除 Connection 头
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(API_URL))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
-            .header("Connection", "close")
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build();
 
+        // 创建一个新的 HttpClient，设置属性来防止连接保持
+        HttpClient client = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
+
         // 发送请求
-        HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = client.send(request, 
             HttpResponse.BodyHandlers.ofString());
 
