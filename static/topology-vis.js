@@ -3,15 +3,12 @@ class TopologyVisualizer {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.resize();
-        this.scale = 1;
-        this.nodeSpacing = 50; // 同级节点之间的最小间距
-        this.levelHeight = 100; // 层级之间的垂直间距
         window.addEventListener('resize', () => this.resize());
     }
 
     resize() {
         this.canvas.width = this.canvas.parentElement.clientWidth - 40;
-        this.canvas.height = Math.max(600, window.innerHeight - 200);
+        this.canvas.height = Math.max(400, window.innerHeight - 200);
         if (this.lastData) {
             this.drawTopology(this.lastData);
         }
@@ -19,130 +16,106 @@ class TopologyVisualizer {
 
     drawNode(x, y, node, id) {
         const ctx = this.ctx;
-        const radius = 15 * this.scale;
+        const radius = 25;
         
+        // 绘制节点圆圈
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fillStyle = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
         ctx.fill();
         ctx.strokeStyle = '#2c5282';
-        ctx.lineWidth = 1 * this.scale;
+        ctx.lineWidth = 2;
         ctx.stroke();
         
+        // 绘制节点ID
         ctx.fillStyle = '#2d3748';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = `bold ${10 * this.scale}px Arial`;
+        ctx.font = 'bold 14px Arial';
         ctx.fillText(id, x, y);
         
-        ctx.font = `${8 * this.scale}px Arial`;
+        // 绘制信道和带宽信息
+        ctx.fillStyle = '#2d3748';
+        ctx.font = '12px Arial';
         const channelInfo = `CH:${node.channel.join(',')}`;
         const bwInfo = `BW:${node.bandwidth.join(',')}`;
-        ctx.fillText(channelInfo, x, y + radius + 10 * this.scale);
-        ctx.fillText(bwInfo, x, y + radius + 20 * this.scale);
+        ctx.fillText(channelInfo, x, y + radius + 15);
+        ctx.fillText(bwInfo, x, y + radius + 30);
     }
 
     drawTopology(data) {
         this.lastData = data;
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        const root = Object.entries(data).find(([_, node]) => node.parent === null)[0];
-        const { positions, treeWidth } = this.calculateNodePositions(data, root);
-
-        // 计算缩放比例
-        const bounds = this.calculateBounds(positions);
-        const scaleX = this.canvas.width / (bounds.maxX - bounds.minX + 100);
-        const scaleY = this.canvas.height / (bounds.maxY - bounds.minY + 100);
-        this.scale = Math.min(scaleX, scaleY, 1); // 限制最大缩放为1
-
-        // 应用缩放和平移
-        ctx.save();
-        ctx.translate(
-            (this.canvas.width - treeWidth * this.scale) / 2,
-            (this.canvas.height - (bounds.maxY - bounds.minY) * this.scale) / 2
-        );
-        ctx.scale(this.scale, this.scale);
-
-        this.drawConnections(data, positions);
-        Object.entries(positions).forEach(([id, pos]) => {
-            this.drawNode(pos.x, pos.y, data[id], id);
-        });
-
-        ctx.restore();
+        
+        // 构建树形结构
+        const root = this.buildTree(data);
+        
+        // 计算节点位置
+        this.calculateNodePositions(root, 0, 0, this.canvas.width, this.canvas.height / 2);
+        
+        // 绘制连线和节点
+        this.drawTreeConnections(root);
+        this.drawTreeNodes(root);
     }
 
-    calculateNodePositions(data, rootId, x = 0, y = 0) {
-        const positions = {};
-        const node = data[rootId];
-        
-        const children = Object.entries(data)
-            .filter(([_, n]) => n.parent === rootId)
-            .map(([id, _]) => id);
+    buildTree(data) {
+        const nodes = {};
+        let root = null;
 
-        if (children.length === 0) {
-            positions[rootId] = { x, y };
-            return { positions, width: 0, leftWidth: 0 };
+        // 创建所有节点
+        for (const [id, nodeData] of Object.entries(data)) {
+            nodes[id] = { ...nodeData, id, children: [] };
+            if (nodeData.parent === null) {
+                root = nodes[id];
+            }
         }
 
-        let totalWidth = 0;
-        let childrenData = children.map(childId => {
-            const childResult = this.calculateNodePositions(data, childId, 0, y + this.levelHeight);
-            totalWidth += childResult.width;
-            return { id: childId, ...childResult };
-        });
-
-        // 调整子节点的x坐标
-        let currentX = x - totalWidth / 2;
-        childrenData.forEach(child => {
-            const childCenterX = currentX + child.leftWidth;
-            child.positions[child.id].x += childCenterX;
-            Object.entries(child.positions).forEach(([id, pos]) => {
-                pos.x += currentX;
-            });
-            currentX += child.width + this.nodeSpacing;
-        });
-
-        // 设置当前节点的位置
-        positions[rootId] = { x, y };
-
-        // 合并所有子节点的位置
-        childrenData.forEach(child => {
-            Object.assign(positions, child.positions);
-        });
-
-        return {
-            positions,
-            width: Math.max(totalWidth, this.nodeSpacing),
-            leftWidth: totalWidth / 2
-        };
-    }
-
-    calculateBounds(positions) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        Object.values(positions).forEach(pos => {
-            minX = Math.min(minX, pos.x);
-            minY = Math.min(minY, pos.y);
-            maxX = Math.max(maxX, pos.x);
-            maxY = Math.max(maxY, pos.y);
-        });
-        return { minX, minY, maxX, maxY };
-    }
-
-    drawConnections(data, positions) {
-        const ctx = this.ctx;
-        Object.entries(data).forEach(([id, node]) => {
-            if (node.parent) {
-                const startPos = positions[node.parent];
-                const endPos = positions[id];
-                ctx.beginPath();
-                ctx.moveTo(startPos.x, startPos.y);
-                ctx.lineTo(endPos.x, endPos.y);
-                ctx.strokeStyle = '#a0aec0';
-                ctx.lineWidth = 1 * this.scale;
-                ctx.stroke();
+        // 构建树形结构
+        for (const node of Object.values(nodes)) {
+            if (node.parent !== null) {
+                nodes[node.parent].children.push(node);
             }
-        });
+        }
+
+        return root;
+    }
+
+    calculateNodePositions(node, depth, startAngle, endAngle, radius) {
+        const angleRange = endAngle - startAngle;
+        const childCount = node.children.length;
+        
+        node.x = this.canvas.width / 2 + radius * Math.cos(startAngle + angleRange / 2);
+        node.y = this.canvas.height / 2 + radius * Math.sin(startAngle + angleRange / 2);
+
+        if (childCount > 0) {
+            const childAngleRange = angleRange / childCount;
+            for (let i = 0; i < childCount; i++) {
+                const childStartAngle = startAngle + i * childAngleRange;
+                const childEndAngle = childStartAngle + childAngleRange;
+                this.calculateNodePositions(node.children[i], depth + 1, childStartAngle, childEndAngle, radius + 100);
+            }
+        }
+    }
+
+    drawTreeConnections(node) {
+        const ctx = this.ctx;
+        for (const child of node.children) {
+            ctx.beginPath();
+            ctx.moveTo(node.x, node.y);
+            ctx.lineTo(child.x, child.y);
+            ctx.strokeStyle = '#a0aec0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            this.drawTreeConnections(child);
+        }
+    }
+
+    drawTreeNodes(node) {
+        this.drawNode(node.x, node.y, node, node.id);
+        for (const child of node.children) {
+            this.drawTreeNodes(child);
+        }
     }
 }
 
@@ -157,35 +130,40 @@ async function loadResults() {
         const resultsList = document.getElementById('resultsList');
         resultsList.innerHTML = '';
         
+        // 对结果按日期降序排序
+        results.sort((a, b) => {
+            const dateA = new Date(a.filename.match(/(\d{8}_\d{6})/)[1].replace(/_/, 'T').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
+            const dateB = new Date(b.filename.match(/(\d{8}_\d{6})/)[1].replace(/_/, 'T').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
+            return dateB - dateA;
+        });
+        
         results.forEach(result => {
             const div = document.createElement('div');
             div.className = 'result-item p-3 rounded cursor-pointer';
             const filename = result.filename;
-            const matches = filename.match(/topology_(\d+)nodes_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.json/);
-            if (matches) {
-                const [_, nodeCount, year, month, day, hour, minute, second] = matches;
-                const date = new Date(year, month - 1, day, hour, minute, second);
-                div.innerHTML = `
-                    <div class="font-semibold">${nodeCount} 节点</div>
-                    <div class="text-sm text-gray-600">${date.toLocaleString()}</div>
-                `;
-                
-                div.onclick = () => {
-                    document.querySelectorAll('.result-item').forEach(item => {
-                        item.classList.remove('active');
-                    });
-                    div.classList.add('active');
-                    visualizer.drawTopology(result.data.data);
-                    activeResult = result;
-                };
-                
-                resultsList.appendChild(div);
-            }
+            const matches = filename.match(/topology_(\d+)nodes_(\d{8}_\d{6})\.json/);
+            const dateStr = matches[2].replace(/_/, 'T').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+            const date = new Date(dateStr);
+            div.innerHTML = `
+                <div class="font-semibold">${matches[1]} 节点</div>
+                <div class="text-sm text-gray-600">${date.toLocaleString()}</div>
+            `;
+            
+            div.onclick = () => {
+                document.querySelectorAll('.result-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                div.classList.add('active');
+                visualizer.drawTopology(result.data.data);
+                activeResult = result;
+            };
+            
+            resultsList.appendChild(div);
         });
         
         // 显示最新的结果
         if (results.length > 0) {
-            resultsList.lastChild.click();
+            resultsList.firstChild.click();
         }
     } catch (error) {
         console.error('加载结果失败:', error);
