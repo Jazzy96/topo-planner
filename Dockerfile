@@ -21,6 +21,7 @@ RUN mkdir -p /app/logs && \
 
 # 复制源代码
 COPY src/ ./src/
+COPY static/ ./static/
 
 # 设置环境变量
 ENV PYTHONPATH=/app
