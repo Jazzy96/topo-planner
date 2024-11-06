@@ -8,34 +8,43 @@ class TopologyVisualizer {
 
     resize() {
         this.canvas.width = this.canvas.parentElement.clientWidth - 40;
-        this.canvas.height = window.innerHeight - 100;
+        this.canvas.height = Math.max(400, window.innerHeight - 200);
+        if (this.lastData) {
+            this.drawTopology(this.lastData);
+        }
     }
 
     drawNode(x, y, node, id) {
         const ctx = this.ctx;
+        const radius = 25;
         
         // 绘制节点圆圈
         ctx.beginPath();
-        ctx.arc(x, y, 30, 0, Math.PI * 2);
-        ctx.fillStyle = node.backhaulBand === 'H' ? '#ff7043' : '#42a5f5';
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
         ctx.fill();
+        ctx.strokeStyle = '#2c5282';
+        ctx.lineWidth = 2;
         ctx.stroke();
         
         // 绘制节点ID
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = '#2d3748';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = '14px Arial';
+        ctx.font = 'bold 14px Arial';
         ctx.fillText(id, x, y);
         
         // 绘制信道和带宽信息
-        ctx.fillStyle = 'black';
+        ctx.fillStyle = '#2d3748';
         ctx.font = '12px Arial';
-        const info = `CH:${node.channel.join(',')} BW:${node.bandwidth.join(',')}`;
-        ctx.fillText(info, x, y + 45);
+        const channelInfo = `CH:${node.channel.join(',')}`;
+        const bwInfo = `BW:${node.bandwidth.join(',')}`;
+        ctx.fillText(channelInfo, x, y + radius + 15);
+        ctx.fillText(bwInfo, x, y + radius + 30);
     }
 
     drawTopology(data) {
+        this.lastData = data;
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
@@ -71,6 +80,8 @@ class TopologyVisualizer {
                     ctx.beginPath();
                     ctx.moveTo(x, y);
                     ctx.lineTo(parentX, parentY);
+                    ctx.strokeStyle = '#a0aec0';
+                    ctx.lineWidth = 2;
                     ctx.stroke();
                 }
                 
@@ -80,43 +91,51 @@ class TopologyVisualizer {
     }
 }
 
-// 初始化
 let visualizer;
 let activeResult = null;
 
 async function loadResults() {
-    const response = await fetch('/api/results');
-    const results = await response.json();
-    
-    const resultsList = document.getElementById('resultsList');
-    resultsList.innerHTML = '';
-    
-    results.forEach(result => {
-        const div = document.createElement('div');
-        div.className = 'result-item';
-        const filename = result.filename;
-        const matches = filename.match(/topology_(\d+)nodes_(\d{8}_\d{6})\.json/);
-        div.textContent = `${matches[1]}节点 - ${matches[2].replace('_', ' ')}`;
+    try {
+        const response = await fetch('/api/results');
+        const results = await response.json();
         
-        div.onclick = () => {
-            document.querySelectorAll('.result-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            div.classList.add('active');
-            visualizer.drawTopology(result.data.data);
-            activeResult = result;
-        };
+        const resultsList = document.getElementById('resultsList');
+        resultsList.innerHTML = '';
         
-        resultsList.appendChild(div);
-    });
-    
-    // 显示最新的结果
-    if (results.length > 0) {
-        resultsList.firstChild.click();
+        results.forEach(result => {
+            const div = document.createElement('div');
+            div.className = 'result-item p-3 rounded cursor-pointer';
+            const filename = result.filename;
+            const matches = filename.match(/topology_(\d+)nodes_(\d{8}_\d{6})\.json/);
+            const date = new Date(matches[2].replace(/_/, 'T').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
+            div.innerHTML = `
+                <div class="font-semibold">${matches[1]} 节点</div>
+                <div class="text-sm text-gray-600">${date.toLocaleString()}</div>
+            `;
+            
+            div.onclick = () => {
+                document.querySelectorAll('.result-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                div.classList.add('active');
+                visualizer.drawTopology(result.data.data);
+                activeResult = result;
+            };
+            
+            resultsList.appendChild(div);
+        });
+        
+        // 显示最新的结果
+        if (results.length > 0) {
+            resultsList.firstChild.click();
+        }
+    } catch (error) {
+        console.error('加载结果失败:', error);
+        alert('加载结果失败，请检查网络连接并刷新页面。');
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     visualizer = new TopologyVisualizer(document.getElementById('canvas'));
     loadResults();
-}); 
+});
