@@ -38,14 +38,17 @@ async def handle_topology_request(request: TopologyRequest):
             request.config_json
         )
         
-        return json.loads(result)
+        return {
+            "status": "success",
+            "data": json.loads(result)
+        }
     
     except Exception as e:
         logger.error(f"处理请求时发生错误: {str(e)}", exc_info=True)
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
 
 @app.get("/health")
 async def health_check():
@@ -56,5 +59,6 @@ if __name__ == "__main__":
         "src.server:app",
         host="0.0.0.0",
         port=8080,
-        log_level="debug"
+        log_level="debug",
+        reload=True
     ) 

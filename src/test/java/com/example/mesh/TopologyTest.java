@@ -30,6 +30,7 @@ public class TopologyTest {
             .uri(URI.create(API_URL))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json")
+            .header("Connection", "close")
             .POST(HttpRequest.BodyPublishers.ofString(requestBody))
             .build();
 
