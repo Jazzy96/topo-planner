@@ -4,45 +4,48 @@ class TopologyVisualizer {
         this.markers = new Map();
         this.polylines = [];
         this.bounds = null;
-        this.icons = {
-            root: {
-                path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z M12,14c-1.38,0-2.63,0.56-3.54,1.46L12,19l3.54-3.54C14.63,14.56,13.38,14,12,14z',
-                fillColor: '#FFFFFF',
-                fillOpacity: 1,
-                strokeColor: '#000000',
-                strokeWeight: 1,
-                scale: 1.2,
-                anchor: new google.maps.Point(12, 12)
-            },
-            highBand: {
-                path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z',
-                fillColor: '#3B82F6', // 亮蓝色
-                fillOpacity: 1,
-                strokeColor: '#1E40AF',
-                strokeWeight: 1,
-                scale: 1,
-                anchor: new google.maps.Point(12, 12)
-            },
-            lowBand: {
-                path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z',
-                fillColor: '#F97316', // 亮橙色
-                fillOpacity: 1,
-                strokeColor: '#C2410C',
-                strokeWeight: 1,
-                scale: 1,
-                anchor: new google.maps.Point(12, 12)
-            }
-        };
+        this.icons = null;
     }
 
     async init() {
-        // 先从后端获取 API 密钥
         try {
+            // 先从后端获取 API 密钥
             const response = await fetch('/api/maps/key');
             const { key } = await response.json();
             
             // 动态加载 Google Maps API
             await this.loadGoogleMapsAPI(key);
+            
+            // 初始化图标 (现在可以安全地使用 google.maps)
+            this.icons = {
+                root: {
+                    path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z M12,14c-1.38,0-2.63,0.56-3.54,1.46L12,19l3.54-3.54C14.63,14.56,13.38,14,12,14z',
+                    fillColor: '#FFFFFF',
+                    fillOpacity: 1,
+                    strokeColor: '#000000',
+                    strokeWeight: 1,
+                    scale: 1.2,
+                    anchor: new google.maps.Point(12, 12)
+                },
+                highBand: {
+                    path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z',
+                    fillColor: '#3B82F6',
+                    fillOpacity: 1,
+                    strokeColor: '#1E40AF',
+                    strokeWeight: 1,
+                    scale: 1,
+                    anchor: new google.maps.Point(12, 12)
+                },
+                lowBand: {
+                    path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z',
+                    fillColor: '#F97316',
+                    fillOpacity: 1,
+                    strokeColor: '#C2410C',
+                    strokeWeight: 1,
+                    scale: 1,
+                    anchor: new google.maps.Point(12, 12)
+                }
+            };
             
             // 初始化地图相关对象
             this.bounds = new google.maps.LatLngBounds();
@@ -169,7 +172,7 @@ class TopologyVisualizer {
     }
 }
 
-let visualizer;
+let visualizer = null;
 let activeResult = null;
 
 async function loadResults() {
@@ -219,5 +222,5 @@ async function loadResults() {
 document.addEventListener('DOMContentLoaded', async () => {
     visualizer = new TopologyVisualizer();
     await visualizer.init();  // 等待初始化完成
-    loadResults();
+    await loadResults();  // 也建议等待结果加载完成
 });
