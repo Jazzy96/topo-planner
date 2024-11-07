@@ -4,13 +4,13 @@ from pydantic import BaseModel
 import uvicorn
 import logging
 from .api import generate_topology as topology_generator
+from .maps import router as maps_router
 import json
 from .logger_config import setup_logger
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os
 from typing import List, Dict
-from routes import maps
 
 # 配置日志
 logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
@@ -28,7 +28,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
-app.include_router(maps.router, prefix="/api/maps", tags=["maps"])
+app.include_router(maps_router, prefix="/api/maps", tags=["maps"])
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():

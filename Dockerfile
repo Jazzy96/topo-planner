@@ -26,6 +26,7 @@ COPY static/ ./static/
 # 设置环境变量
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+ENV GOOGLE_MAPS_API_KEY=AIzaSyDlqgDphJQgMNPPCOVgTcOeqAqv-mxABc8
 
 # 暴露端口
 EXPOSE 8080
