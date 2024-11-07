@@ -95,42 +95,33 @@ def save_topology_result(result: str, node_count: int) -> str:
         
     return filename
 
-def get_timestamp_from_filename(filename: str) -> datetime:
-    """从文件名中提取时间戳"""
-    try:
-        # 从文件名中提取日期时间部分
-        timestamp_str = filename.split('_')[2].split('.')[0]
-        return datetime.strptime(timestamp_str, '%Y%m%d_%H%M%S')
-    except (IndexError, ValueError):
-        # 如果解析失败，返回一个很早的日期
-        return datetime.min
-
 def list_topology_results():
-    """列出所有拓扑结果文件，按时间戳排序"""
+    """列出所有拓扑结果文件，按文件修改时间排序"""
     result_dir = "/app/results"
     results = []
     
-    # 先获取所有文件名并排序
+    # 获取所有符合条件的文件
     filenames = [f for f in os.listdir(result_dir) 
                 if f.startswith('topology_') and f.endswith('.json')]
     
     for filename in filenames:
         filepath = os.path.join(result_dir, filename)
         try:
+            # 获取文件修改时间
+            file_timestamp = datetime.fromtimestamp(os.path.getmtime(filepath))
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                timestamp = get_timestamp_from_filename(filename)
-                logger.debug(f"文件: {filename}, 时间戳: {timestamp}")
+                logger.debug(f"文件: {filename}, 修改时间: {file_timestamp}")
                 results.append({
                     'filename': filename,
                     'data': data,
-                    'timestamp': timestamp
+                    'timestamp': file_timestamp
                 })
         except (json.JSONDecodeError, IOError) as e:
             logger.error(f"处理文件 {filename} 时出错: {str(e)}")
             continue
     
-    # 按时间戳排序
+    # 按文件修改时间排序
     results.sort(key=lambda x: x['timestamp'], reverse=True)
     
     # 打印排序后的结果
