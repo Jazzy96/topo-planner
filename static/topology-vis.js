@@ -16,12 +16,12 @@ class TopologyVisualizer {
             
             this.icons = {
                 root: {
-                    path: 'M20 6c0-1.1-.9-2-2-2h-16c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-12zm-2 0l-8 4.99-8-4.99v-2l8 5 8-5v2zm0 12h-16v-8l8 5 8-5v8z',
+                    path: 'M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V8h16v10H4zm2-3h12v-2H6v2zm0-4h12V9H6v2zm15-5V4l-2-2v4M5 4V2L3 4v2',
                     fillColor: '#FFFFFF',
                     fillOpacity: 1,
                     strokeWeight: 0,
                     scale: 1.5,
-                    anchor: new google.maps.Point(10, 10)
+                    anchor: new google.maps.Point(12, 12)
                 },
                 highBand: {
                     path: 'M12 2C7.7 2 3.6 3.4 0.4 6.3L2.5 8.4C5.2 6 8.6 4.8 12 4.8C15.4 4.8 18.8 6 21.5 8.4L23.6 6.3C20.4 3.4 16.3 2 12 2zM12 8C9 8 6.1 9 3.8 10.9L5.9 13C7.7 11.5 9.8 10.8 12 10.8C14.2 10.8 16.3 11.5 18.1 13L20.2 10.9C17.9 9 15 8 12 8zM12 14C10.9 14 10 14.9 10 16C10 17.1 10.9 18 12 18C13.1 18 14 17.1 14 16C14 14.9 13.1 14 12 14z',

@@ -44,6 +44,7 @@
         /* 覆盖 Google Maps InfoWindow 默认样式 */
         .gm-style-iw {
             padding: 0 !important;
+            border: none !important;
         }
         
         .gm-style-iw-d {
@@ -53,6 +54,18 @@
         
         .gm-style-iw-t {
             margin: 0 !important;
+        }
+        
+        /* 移除所有 InfoWindow 相关元素的边框 */
+        .gm-style-iw,
+        .gm-style-iw > div,
+        .gm-style-iw-d,
+        .gm-style-iw-t,
+        .gm-style-iw-tc,
+        .gm-style-iw-c {
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
         }
         
         .gm-ui-hover-effect {
