@@ -152,7 +152,7 @@ async function loadResults() {
         const resultsList = document.getElementById('resultsList');
         resultsList.innerHTML = '';
         
-        results.forEach(result => {
+        results.reverse().forEach(result => {
             const div = document.createElement('div');
             div.className = 'result-item p-3 rounded cursor-pointer';
             const filename = result.filename;
