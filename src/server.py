@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os
 from typing import List, Dict
+import uvicorn
 
 # 配置日志
 logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
