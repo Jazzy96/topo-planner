@@ -188,6 +188,10 @@ public class TopologyTest {
         double rootLat = -36.739546;
         double rootLon = 174.631266;
         
+        // 根据节点数量计算合适的覆盖半径（单位：米）
+        // 假设每个节点理想覆盖面积 = 总面积 / 节点数
+        double totalRadius = Math.min(2000, Math.sqrt(nodeCount) * 300); // 最大2000米
+        
         // 存储所有节点的GPS坐标
         List<List<Double>> nodePositions = new ArrayList<>();
         
@@ -196,18 +200,30 @@ public class TopologyTest {
             String nodeId = "SN" + i;
             NodeInfo node = new NodeInfo();
             
-            // 为根节点使用固定坐标，为其他节点在周围范围内随机生成坐标
             List<Double> gps;
             if (i == 0) {
+                // 根节点使用固定坐标
                 gps = Arrays.asList(rootLat, rootLon);
             } else {
-                // 在根节点周围2公里范围内随机生成坐标
-                double radius = Math.random() * 2000; // 最大2000米
-                double angle = Math.random() * 2 * Math.PI;
+                // 使用同心圆方式生成其他节点的坐标
+                // 计算当前节点所在的层数和该层的节点索引
+                int layerIndex = (int)Math.sqrt(i);
+                int nodesInThisLayer = layerIndex * 8; // 每层节点数随半径增加
+                int nodeIndexInLayer = (i - layerIndex * layerIndex) % nodesInThisLayer;
+                
+                // 计算当前层的半径（递增）
+                double layerRadius = (totalRadius * layerIndex) / Math.sqrt(nodeCount);
+                
+                // 计算角度（添加随机偏移）
+                double angle = (2 * Math.PI * nodeIndexInLayer) / nodesInThisLayer;
+                angle += (Math.random() - 0.5) * Math.PI / nodesInThisLayer; // 添加随机偏移
+                
+                // 添加半径的随机偏移（±20%）
+                double radiusWithJitter = layerRadius * (0.8 + Math.random() * 0.4);
                 
                 // 将极坐标转换为经纬度偏移
-                double latOffset = (radius / 111111) * Math.cos(angle);
-                double lonOffset = (radius / (111111 * Math.cos(Math.toRadians(rootLat)))) * Math.sin(angle);
+                double latOffset = (radiusWithJitter / 111111) * Math.cos(angle);
+                double lonOffset = (radiusWithJitter / (111111 * Math.cos(Math.toRadians(rootLat)))) * Math.sin(angle);
                 
                 gps = Arrays.asList(
                     rootLat + latOffset,
