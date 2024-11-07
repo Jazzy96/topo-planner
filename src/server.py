@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os
 from typing import List, Dict
+from routes import maps
 
 # 配置日志
 logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
@@ -25,8 +26,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "Accept", "Authorization"],
 )
 
-# 在现有路由之前添加
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+
+app.include_router(maps.router, prefix="/api/maps", tags=["maps"])
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():

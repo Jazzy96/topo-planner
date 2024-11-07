@@ -1,145 +1,138 @@
 class TopologyVisualizer {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.resize();
-        this.scale = 1;
-        this.nodeSpacing = 80; // 增加节点间距
-        this.levelHeight = 120; // 增加层级高度
-        this.nodePadding = 20; // 节点周围的额外空间
-        window.addEventListener('resize', () => this.resize());
+    constructor() {
+        this.map = null;
+        this.markers = new Map();
+        this.polylines = [];
+        this.bounds = null;
     }
 
-    resize() {
-        this.canvas.width = this.canvas.parentElement.clientWidth - 40;
-        this.canvas.height = Math.max(600, window.innerHeight - 200);
-        if (this.lastData) {
-            this.drawTopology(this.lastData);
+    async init() {
+        // 先从后端获取 API 密钥
+        try {
+            const response = await fetch('/api/maps/key');
+            const { key } = await response.json();
+            
+            // 动态加载 Google Maps API
+            await this.loadGoogleMapsAPI(key);
+            
+            // 初始化地图相关对象
+            this.bounds = new google.maps.LatLngBounds();
+            this.initMap();
+        } catch (error) {
+            console.error('初始化地图失败:', error);
+            alert('初始化地图失败，请刷新页面重试');
         }
     }
 
-    drawNode(x, y, node, id) {
-        const ctx = this.ctx;
-        const radius = 20; // 增加节点大小
-        
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
-        ctx.fill();
-        ctx.strokeStyle = '#2c5282';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        ctx.fillStyle = '#2d3748';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = 'bold 12px Arial';
-        ctx.fillText(id, x, y);
-        
-        ctx.font = '10px Arial';
-        const channelInfo = `CH:${node.channel.join(',')}`;
-        const bwInfo = `BW:${node.bandwidth.join(',')}`;
-        ctx.fillText(channelInfo, x, y + radius + 15);
-        ctx.fillText(bwInfo, x, y + radius + 30);
-        
-        // 添加 GPS 信息显示
-        if (node.gps) {
-            const gpsInfo = `(${node.gps[0].toFixed(6)}, ${node.gps[1].toFixed(6)})`;
-            ctx.fillText(gpsInfo, x, y + radius + 45);
-        }
+    loadGoogleMapsAPI(key) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}`;
+            script.async = true;
+            script.defer = true;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
-    drawTopology(data) {
-        this.lastData = data;
-        const ctx = this.ctx;
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        const root = Object.entries(data).find(([_, node]) => node.parent === null)[0];
-        const { positions, width, height } = this.calculateNodePositions(data, root);
-
-        // 计算缩放比例
-        const scaleX = this.canvas.width / (width + this.nodePadding * 2);
-        const scaleY = this.canvas.height / (height + this.nodePadding * 2);
-        this.scale = Math.min(scaleX, scaleY, 1);
-
-        // 应用缩放和平移
-        ctx.save();
-        ctx.translate(
-            (this.canvas.width - width * this.scale) / 2,
-            (this.canvas.height - height * this.scale) / 2
-        );
-        ctx.scale(this.scale, this.scale);
-
-        this.drawConnections(data, positions);
-        Object.entries(positions).forEach(([id, pos]) => {
-            this.drawNode(pos.x, pos.y, data[id], id);
+    initMap() {
+        this.map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 15,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
         });
-
-        ctx.restore();
     }
 
-    calculateNodePositions(data, rootId, x = 0, y = 0) {
-        const positions = {};
-        const node = data[rootId];
+    clearMap() {
+        // 清除所有标记
+        this.markers.forEach(marker => marker.setMap(null));
+        this.markers.clear();
+
+        // 清除所有连线
+        this.polylines.forEach(line => line.setMap(null));
+        this.polylines = [];
+
+        // 重置边界
+        this.bounds = new google.maps.LatLngBounds();
+    }
+
+    createMarker(nodeId, node) {
+        const position = { lat: node.gps[0], lng: node.gps[1] };
         
-        const children = Object.entries(data)
-            .filter(([_, n]) => n.parent === rootId)
-            .map(([id, _]) => id);
-
-        if (children.length === 0) {
-            positions[rootId] = { x, y };
-            return { positions, width: this.nodeSpacing, height: this.levelHeight };
-        }
-
-        let totalWidth = 0;
-        let maxChildHeight = 0;
-        let childrenData = children.map(childId => {
-            const childResult = this.calculateNodePositions(data, childId, 0, y + this.levelHeight);
-            totalWidth += childResult.width;
-            maxChildHeight = Math.max(maxChildHeight, childResult.height);
-            return { id: childId, ...childResult };
-        });
-
-        // 调整子节点的x坐标
-        let currentX = x - totalWidth / 2;
-        childrenData.forEach(child => {
-            const childCenterX = currentX + child.width / 2;
-            Object.entries(child.positions).forEach(([id, pos]) => {
-                pos.x += childCenterX - x;
-                pos.y += this.levelHeight;
-            });
-            currentX += child.width;
-        });
-
-        // 设置当前节点的位置
-        positions[rootId] = { x, y };
-
-        // 合并所有子节点的位置
-        childrenData.forEach(child => {
-            Object.assign(positions, child.positions);
-        });
-
-        return {
-            positions,
-            width: Math.max(totalWidth, this.nodeSpacing),
-            height: this.levelHeight + maxChildHeight
-        };
-    }
-
-    drawConnections(data, positions) {
-        const ctx = this.ctx;
-        ctx.strokeStyle = '#a0aec0';
-        ctx.lineWidth = 2;
-        Object.entries(data).forEach(([id, node]) => {
-            if (node.parent) {
-                const startPos = positions[node.parent];
-                const endPos = positions[id];
-                ctx.beginPath();
-                ctx.moveTo(startPos.x, startPos.y);
-                ctx.lineTo(endPos.x, endPos.y);
-                ctx.stroke();
+        // 根据 backhaulBand 决定图标颜色
+        const color = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
+        
+        const marker = new google.maps.Marker({
+            position: position,
+            map: this.map,
+            title: nodeId,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: color,
+                fillOpacity: 1,
+                strokeColor: '#2c5282',
+                strokeWeight: 2,
             }
         });
+
+        // 添加信息窗口
+        const infoContent = `
+            <div class="p-2">
+                <h3 class="font-bold">${nodeId}</h3>
+                <p>信道: ${node.channel.join(',')}</p>
+                <p>带宽: ${node.bandwidth.join(',')}</p>
+                <p>层级: ${node.level}</p>
+                <p>GPS: ${node.gps[0]}, ${node.gps[1]}</p>
+            </div>
+        `;
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: infoContent
+        });
+
+        marker.addListener('click', () => {
+            infoWindow.open(this.map, marker);
+        });
+
+        this.bounds.extend(position);
+        return marker;
+    }
+
+    drawConnection(fromNode, toNode) {
+        const line = new google.maps.Polyline({
+            path: [
+                { lat: fromNode.gps[0], lng: fromNode.gps[1] },
+                { lat: toNode.gps[0], lng: toNode.gps[1] }
+            ],
+            geodesic: true,
+            strokeColor: '#a0aec0',
+            strokeOpacity: 1.0,
+            strokeWeight: 2,
+            map: this.map
+        });
+        
+        this.polylines.push(line);
+    }
+
+    visualizeTopology(data) {
+        this.clearMap();
+
+        // 创建所有节点的标记
+        Object.entries(data).forEach(([nodeId, node]) => {
+            const marker = this.createMarker(nodeId, node);
+            this.markers.set(nodeId, marker);
+        });
+
+        // 绘制连接线
+        Object.entries(data).forEach(([nodeId, node]) => {
+            if (node.parent) {
+                this.drawConnection(data[node.parent], node);
+            }
+        });
+
+        // 调整地图视野以显示所有节点
+        this.map.fitBounds(this.bounds);
     }
 }
 
@@ -172,7 +165,7 @@ async function loadResults() {
                         item.classList.remove('active');
                     });
                     div.classList.add('active');
-                    visualizer.drawTopology(result.data.data);
+                    visualizer.visualizeTopology(result.data.data);
                     activeResult = result;
                 };
                 
@@ -190,7 +183,8 @@ async function loadResults() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    visualizer = new TopologyVisualizer(document.getElementById('canvas'));
+document.addEventListener('DOMContentLoaded', async () => {
+    visualizer = new TopologyVisualizer();
+    await visualizer.init();  // 等待初始化完成
     loadResults();
 });
