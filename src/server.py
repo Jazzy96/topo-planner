@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import uvicorn
-import logging
+from fastapi.middleware import Middleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 from .api import generate_topology as topology_generator
 from .maps import router as maps_router
 import json
@@ -15,16 +17,29 @@ from typing import List, Dict
 # 配置日志
 logger = setup_logger(__name__, '/var/log/topo-planner/topo-planner.log')
 
-app = FastAPI()
+class CSPMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://*.googleapis.com https://*.gstatic.com; "
+            "font-src 'self' https://cdn.jsdelivr.net; "
+            "connect-src 'self' https://*.googleapis.com"
+        )
+        return response
 
-# 添加CORS中间件
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["POST", "GET", "OPTIONS"],
-    allow_headers=["Content-Type", "Accept", "Authorization"],
-)
+app = FastAPI(middleware=[
+    Middleware(CSPMiddleware),
+    Middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["POST", "GET", "OPTIONS"],
+        allow_headers=["Content-Type", "Accept", "Authorization"],
+    )
+])
 
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 

@@ -59,8 +59,13 @@ class TopologyVisualizer {
     createMarker(nodeId, node) {
         const position = { lat: node.gps[0], lng: node.gps[1] };
         
-        // 根据 backhaulBand 决定图标颜色
-        const color = node.backhaulBand === 'H' ? '#f6ad55' : '#63b3ed';
+        // 根据节点类型决定图标颜色
+        let color;
+        if (node.parent === null) {
+            color = '#10B981';
+        } else {
+            color = node.backhaulBand === 'H' ? '#FB923C' : '#60A5FA';
+        }
         
         const marker = new google.maps.Marker({
             position: position,
