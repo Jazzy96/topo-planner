@@ -9,45 +9,38 @@ class TopologyVisualizer {
 
     async init() {
         try {
-            // 先从后端获取 API 密钥
             const response = await fetch('/api/maps/key');
             const { key } = await response.json();
             
-            // 动态加载 Google Maps API
             await this.loadGoogleMapsAPI(key);
             
-            // 初始化图标 (现在可以安全地使用 google.maps)
             this.icons = {
                 root: {
-                    path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z M12,14c-1.38,0-2.63,0.56-3.54,1.46L12,19l3.54-3.54C14.63,14.56,13.38,14,12,14z',
+                    path: 'M12 2C7.7 2 3.6 3.4 0.4 6.3L2.5 8.4C5.2 6 8.6 4.8 12 4.8C15.4 4.8 18.8 6 21.5 8.4L23.6 6.3C20.4 3.4 16.3 2 12 2zM12 8C9 8 6.1 9 3.8 10.9L5.9 13C7.7 11.5 9.8 10.8 12 10.8C14.2 10.8 16.3 11.5 18.1 13L20.2 10.9C17.9 9 15 8 12 8zM12 14C10.3 14 8.7 14.5 7.4 15.6L12 20.2L16.6 15.6C15.3 14.5 13.7 14 12 14z',
                     fillColor: '#FFFFFF',
                     fillOpacity: 1,
-                    strokeColor: '#000000',
-                    strokeWeight: 1,
+                    strokeWeight: 0,
                     scale: 1.2,
                     anchor: new google.maps.Point(12, 12)
                 },
                 highBand: {
-                    path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z',
+                    path: 'M12 2C7.7 2 3.6 3.4 0.4 6.3L2.5 8.4C5.2 6 8.6 4.8 12 4.8C15.4 4.8 18.8 6 21.5 8.4L23.6 6.3C20.4 3.4 16.3 2 12 2zM12 8C9 8 6.1 9 3.8 10.9L5.9 13C7.7 11.5 9.8 10.8 12 10.8C14.2 10.8 16.3 11.5 18.1 13L20.2 10.9C17.9 9 15 8 12 8zM12 14C10.9 14 10 14.9 10 16C10 17.1 10.9 18 12 18C13.1 18 14 17.1 14 16C14 14.9 13.1 14 12 14z',
                     fillColor: '#3B82F6',
                     fillOpacity: 1,
-                    strokeColor: '#1E40AF',
-                    strokeWeight: 1,
+                    strokeWeight: 0,
                     scale: 1,
                     anchor: new google.maps.Point(12, 12)
                 },
                 lowBand: {
-                    path: 'M12,2C7.79,2,3.7,4.41,2.46,7.47L4,9C4.96,6.67,8.28,4.5,12,4.5s7.04,2.17,8,4.5l1.54-1.53 C20.3,4.41,16.21,2,12,2z M12,8C9.67,8,7.15,9.53,6.34,11.6l1.41,1.41C8.37,11.7,10.32,10.5,12,10.5s3.63,1.2,4.25,2.51l1.41-1.41 C16.85,9.53,14.33,8,12,8z',
+                    path: 'M12 2C7.7 2 3.6 3.4 0.4 6.3L2.5 8.4C5.2 6 8.6 4.8 12 4.8C15.4 4.8 18.8 6 21.5 8.4L23.6 6.3C20.4 3.4 16.3 2 12 2zM12 8C9 8 6.1 9 3.8 10.9L5.9 13C7.7 11.5 9.8 10.8 12 10.8C14.2 10.8 16.3 11.5 18.1 13L20.2 10.9C17.9 9 15 8 12 8zM12 14C10.9 14 10 14.9 10 16C10 17.1 10.9 18 12 18C13.1 18 14 17.1 14 16C14 14.9 13.1 14 12 14z',
                     fillColor: '#F97316',
                     fillOpacity: 1,
-                    strokeColor: '#C2410C',
-                    strokeWeight: 1,
+                    strokeWeight: 0,
                     scale: 1,
                     anchor: new google.maps.Point(12, 12)
                 }
             };
             
-            // 初始化地图相关对象
             this.bounds = new google.maps.LatLngBounds();
             this.initMap();
         } catch (error) {
@@ -76,22 +69,18 @@ class TopologyVisualizer {
     }
 
     clearMap() {
-        // 清除所有标记
         this.markers.forEach(marker => marker.setMap(null));
         this.markers.clear();
 
-        // 清除所有连线
         this.polylines.forEach(line => line.setMap(null));
         this.polylines = [];
 
-        // 重置边界
         this.bounds = new google.maps.LatLngBounds();
     }
 
     createMarker(nodeId, node) {
         const position = { lat: node.gps[0], lng: node.gps[1] };
         
-        // 根据节点类型选择图标
         let icon;
         if (node.parent === null) {
             icon = this.icons.root;
@@ -106,23 +95,43 @@ class TopologyVisualizer {
             icon: icon
         });
 
-        // 创建信息窗口
         const infoContent = `
-            <div class="p-2">
-                <h3 class="font-bold">${nodeId}</h3>
-                <p>信道: ${node.channel.join(',')}</p>
-                <p>带宽: ${node.bandwidth.join(',')}</p>
-                <p>层级: ${node.level}</p>
-                <p>GPS: ${node.gps[0]}, ${node.gps[1]}</p>
+            <div class="p-2" style="margin: 0;">
+                <h3 class="font-bold mb-1">${nodeId}</h3>
+                <p class="mb-1">信道: ${node.channel.join(',')}</p>
+                <p class="mb-1">带宽: ${node.bandwidth.join(',')}</p>
+                <p class="mb-1">层级: ${node.level}</p>
+                <p class="mb-0">GPS: ${node.gps[0]}, ${node.gps[1]}</p>
             </div>
         `;
 
         const infoWindow = new google.maps.InfoWindow({
             content: infoContent,
-            disableAutoPan: true // 防止地图自动平移
+            disableAutoPan: true,
+            pixelOffset: new google.maps.Size(0, -10),
+            maxWidth: 200,
+            closeBoxURL: "",
+            boxStyle: { 
+                padding: "0px",
+                margin: "0px"
+            }
         });
 
-        // 添加鼠标悬停事件
+        google.maps.event.addListener(infoWindow, 'domready', () => {
+            const iwOuter = document.querySelector('.gm-style-iw');
+            if (iwOuter) {
+                iwOuter.style.padding = '0';
+                const closeButton = iwOuter.nextElementSibling;
+                if (closeButton) {
+                    closeButton.style.display = 'none';
+                }
+                const iwBackground = iwOuter.previousElementSibling;
+                if (iwBackground) {
+                    iwBackground.style.display = 'none';
+                }
+            }
+        });
+
         marker.addListener('mouseover', () => {
             infoWindow.open(this.map, marker);
         });
@@ -154,20 +163,17 @@ class TopologyVisualizer {
     visualizeTopology(data) {
         this.clearMap();
 
-        // 创建所有节点的标记
         Object.entries(data).forEach(([nodeId, node]) => {
             const marker = this.createMarker(nodeId, node);
             this.markers.set(nodeId, marker);
         });
 
-        // 绘制连接线
         Object.entries(data).forEach(([nodeId, node]) => {
             if (node.parent) {
                 this.drawConnection(data[node.parent], node);
             }
         });
 
-        // 调整地图视野以显示所有节点
         this.map.fitBounds(this.bounds);
     }
 }
@@ -209,7 +215,6 @@ async function loadResults() {
             }
         });
         
-        // 显示第一个结果（最新的）
         if (results.length > 0) {
             resultsList.firstChild.click();
         }
@@ -221,6 +226,6 @@ async function loadResults() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     visualizer = new TopologyVisualizer();
-    await visualizer.init();  // 等待初始化完成
-    await loadResults();  // 也建议等待结果加载完成
+    await visualizer.init();
+    await loadResults();
 });
