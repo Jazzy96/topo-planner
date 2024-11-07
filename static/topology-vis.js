@@ -152,7 +152,7 @@ async function loadResults() {
         const resultsList = document.getElementById('resultsList');
         resultsList.innerHTML = '';
         
-        results.reverse().forEach(result => {
+        results.forEach(result => {
             const div = document.createElement('div');
             div.className = 'result-item p-3 rounded cursor-pointer';
             const filename = result.filename;
@@ -178,9 +178,9 @@ async function loadResults() {
             }
         });
         
-        // 显示最新的结果
+        // 显示第一个结果（最新的）
         if (results.length > 0) {
-            resultsList.lastChild.click();
+            resultsList.firstChild.click();
         }
     } catch (error) {
         console.error('加载结果失败:', error);

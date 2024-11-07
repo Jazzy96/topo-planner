@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
+
 from pydantic import BaseModel
 from .api import generate_topology as topology_generator
 from .maps import router as maps_router
@@ -53,21 +54,8 @@ async def get_index():
 
 @app.get("/api/results")
 async def get_results():
-    result_dir = "/app/results"
-    results = []
-    
-    if os.path.exists(result_dir):
-        for file in sorted(os.listdir(result_dir), reverse=True):
-            if file.endswith('.json'):
-                filepath = os.path.join(result_dir, file)
-                with open(filepath, 'r') as f:
-                    data = json.load(f)
-                results.append({
-                    'filename': file,
-                    'data': data
-                })
-    
-    return results
+    from .api import list_topology_results
+    return list_topology_results()
 
 @app.get("/api/result/{filename}")
 async def get_result(filename: str):

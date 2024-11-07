@@ -94,3 +94,42 @@ def save_topology_result(result: str, node_count: int) -> str:
         f.write(result)
         
     return filename
+
+def get_timestamp_from_filename(filename: str) -> datetime:
+    """从文件名中提取时间戳"""
+    try:
+        # 从文件名中提取日期时间部分
+        timestamp_str = filename.split('_')[2].split('.')[0]
+        return datetime.strptime(timestamp_str, '%Y%m%d_%H%M%S')
+    except (IndexError, ValueError):
+        # 如果解析失败，返回一个很早的日期
+        return datetime.min
+
+def list_topology_results():
+    """列出所有拓扑结果文件，按时间戳排序"""
+    result_dir = "/app/results"
+    results = []
+    
+    for filename in os.listdir(result_dir):
+        if filename.startswith('topology_') and filename.endswith('.json'):
+            filepath = os.path.join(result_dir, filename)
+            with open(filepath, 'r', encoding='utf-8') as f:
+                try:
+                    data = json.load(f)
+                    results.append({
+                        'filename': filename,
+                        'data': data,
+                        'timestamp': get_timestamp_from_filename(filename)
+                    })
+                except json.JSONDecodeError:
+                    logger.error(f"无法解析文件 {filename}")
+                    continue
+    
+    # 按时间戳排序
+    results.sort(key=lambda x: x['timestamp'], reverse=True)
+    
+    # 移除timestamp字段，因为前端不需要
+    for result in results:
+        del result['timestamp']
+    
+    return results
