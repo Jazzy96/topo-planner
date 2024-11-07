@@ -16,12 +16,12 @@ class TopologyVisualizer {
             
             this.icons = {
                 root: {
-                    path: 'M12 2C7.7 2 3.6 3.4 0.4 6.3L2.5 8.4C5.2 6 8.6 4.8 12 4.8C15.4 4.8 18.8 6 21.5 8.4L23.6 6.3C20.4 3.4 16.3 2 12 2zM12 8C9 8 6.1 9 3.8 10.9L5.9 13C7.7 11.5 9.8 10.8 12 10.8C14.2 10.8 16.3 11.5 18.1 13L20.2 10.9C17.9 9 15 8 12 8zM12 14C10.3 14 8.7 14.5 7.4 15.6L12 20.2L16.6 15.6C15.3 14.5 13.7 14 12 14z',
+                    path: 'M20 6c0-1.1-.9-2-2-2h-16c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-12zm-2 0l-8 4.99-8-4.99v-2l8 5 8-5v2zm0 12h-16v-8l8 5 8-5v8z',
                     fillColor: '#FFFFFF',
                     fillOpacity: 1,
                     strokeWeight: 0,
-                    scale: 1.2,
-                    anchor: new google.maps.Point(12, 12)
+                    scale: 1.5,
+                    anchor: new google.maps.Point(10, 10)
                 },
                 highBand: {
                     path: 'M12 2C7.7 2 3.6 3.4 0.4 6.3L2.5 8.4C5.2 6 8.6 4.8 12 4.8C15.4 4.8 18.8 6 21.5 8.4L23.6 6.3C20.4 3.4 16.3 2 12 2zM12 8C9 8 6.1 9 3.8 10.9L5.9 13C7.7 11.5 9.8 10.8 12 10.8C14.2 10.8 16.3 11.5 18.1 13L20.2 10.9C17.9 9 15 8 12 8zM12 14C10.9 14 10 14.9 10 16C10 17.1 10.9 18 12 18C13.1 18 14 17.1 14 16C14 14.9 13.1 14 12 14z',
@@ -96,12 +96,22 @@ class TopologyVisualizer {
         });
 
         const infoContent = `
-            <div class="p-2" style="margin: 0;">
-                <h3 class="font-bold mb-1">${nodeId}</h3>
-                <p class="mb-1">信道: ${node.channel.join(',')}</p>
-                <p class="mb-1">带宽: ${node.bandwidth.join(',')}</p>
-                <p class="mb-1">层级: ${node.level}</p>
-                <p class="mb-0">GPS: ${node.gps[0]}, ${node.gps[1]}</p>
+            <div class="bg-white rounded-lg shadow-lg" style="margin: 0; min-width: 200px;">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">${nodeId}</h3>
+                </div>
+                <div class="px-4 py-3">
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div class="text-gray-600">信道</div>
+                        <div class="text-gray-900 font-medium">${node.channel.join(',')}</div>
+                        <div class="text-gray-600">带宽</div>
+                        <div class="text-gray-900 font-medium">${node.bandwidth.join(',')}</div>
+                        <div class="text-gray-600">层级</div>
+                        <div class="text-gray-900 font-medium">${node.level}</div>
+                        <div class="text-gray-600">GPS</div>
+                        <div class="text-gray-900 font-medium">${node.gps[0].toFixed(6)}, ${node.gps[1].toFixed(6)}</div>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -109,27 +119,20 @@ class TopologyVisualizer {
             content: infoContent,
             disableAutoPan: true,
             pixelOffset: new google.maps.Size(0, -10),
-            maxWidth: 200,
-            closeBoxURL: "",
-            boxStyle: { 
-                padding: "0px",
-                margin: "0px"
-            }
+            maxWidth: 300
         });
 
         google.maps.event.addListener(infoWindow, 'domready', () => {
-            const iwOuter = document.querySelector('.gm-style-iw');
-            if (iwOuter) {
-                iwOuter.style.padding = '0';
-                const closeButton = iwOuter.nextElementSibling;
-                if (closeButton) {
-                    closeButton.style.display = 'none';
-                }
-                const iwBackground = iwOuter.previousElementSibling;
-                if (iwBackground) {
-                    iwBackground.style.display = 'none';
-                }
-            }
+            document.querySelectorAll('.gm-style-iw-a, .gm-style-iw-t, .gm-style-iw').forEach(el => {
+                el.style.background = 'transparent';
+                el.style.boxShadow = 'none';
+                el.style.border = 'none';
+                el.style.padding = '0';
+                el.style.borderRadius = '0';
+            });
+            
+            const closeButtons = document.querySelectorAll('.gm-ui-hover-effect');
+            closeButtons.forEach(button => button.style.display = 'none');
         });
 
         marker.addListener('mouseover', () => {
