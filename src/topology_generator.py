@@ -126,7 +126,8 @@ class TopologyGenerator:
                     level=0,
                     channel=[],
                     bandwidth=[],
-                    max_eirp=[]
+                    max_eirp=[],
+                    gps=nodes[root_node].gps
                 )
             }
             
@@ -156,7 +157,8 @@ class TopologyGenerator:
                     level=parent_level + 1,
                     channel=[],
                     bandwidth=[],
-                    max_eirp=[]
+                    max_eirp=[],
+                    gps=nodes[child].gps
                 )
                 
                 # 更新节点集合

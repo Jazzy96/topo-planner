@@ -20,4 +20,5 @@ class TopologyNode:
     level: int
     channel: List[int]
     bandwidth: List[int]
-    max_eirp: List[int] 
+    max_eirp: List[float]
+    gps: Optional[List[float]]

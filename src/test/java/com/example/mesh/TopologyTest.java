@@ -119,25 +119,58 @@ public class TopologyTest {
         public EdgeInfo() {}
     }
 
-    private EdgeInfo generateEdgeInfo() {
+    // 添加用于计算距离和RSSI的辅助方法
+    private double distance(List<Double> pos1, List<Double> pos2) {
+        // 使用 Haversine 公式计算两点间距离（单位：米）
+        double lat1 = Math.toRadians(pos1.get(0));
+        double lon1 = Math.toRadians(pos1.get(1));
+        double lat2 = Math.toRadians(pos2.get(0));
+        double lon2 = Math.toRadians(pos2.get(1));
+        
+        double R = 6371e3; // 地球半径（米）
+        double dLat = lat2 - lat1;
+        double dLon = lon2 - lon1;
+        
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                   Math.cos(lat1) * Math.cos(lat2) *
+                   Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        
+        return R * c;
+    }
+
+    private double baseRSSI(double distance, double frequency, double txPower, double txGain, double rxGain, double loss) {
+        double c = 3e8;
+        double fspl = 20 * Math.log10(distance) + 
+                     20 * Math.log10(frequency) + 
+                     20 * Math.log10(4 * Math.PI / c) + loss;
+        return txPower + txGain + rxGain - fspl;
+    }
+
+    private EdgeInfo generateEdgeInfo(List<Double> pos1, List<Double> pos2) {
         EdgeInfo edge = new EdgeInfo();
+        double dist = distance(pos1, pos2);
         
-        // 首先生成6GL频段的RSSI值（通常信号更强）
-        int rssi1_6gl = -40 - (int)(Math.random() * 30); // -40到-70之间
-        int rssi2_6gl = rssi1_6gl + (int)(Math.random() * 21 - 10); // 与第一个方向相差-10到+10
+        // 基础参数
+        double txPower = 22;
+        double txGain = 7.5;
+        double rxGain = 7.5;
+        double loss = 8;
         
-        // 生成6GH频段的RSSI值（比6GL弱，但差值不超过15）
-        int rssi1_6gh = rssi1_6gl - (int)(Math.random() * 10); // 比6GL弱0-10dB
-        int rssi2_6gh = rssi2_6gl - (int)(Math.random() * 10); // 比6GL弱0-10dB
+        // 计算6GL和6GH的RSSI
+        double baseL = baseRSSI(dist, 6.15e9, txPower, txGain, rxGain, loss);
+        double baseH = baseRSSI(dist, 6.75e9, txPower, txGain, rxGain, loss);
         
-        // 确保所有RSSI值都在合理范围内（-40到-80间）
-        rssi1_6gh = Math.max(-80, Math.min(-40, rssi1_6gh));
-        rssi2_6gh = Math.max(-80, Math.min(-40, rssi2_6gh));
-        rssi1_6gl = Math.max(-80, Math.min(-40, rssi1_6gl));
-        rssi2_6gl = Math.max(-80, Math.min(-40, rssi2_6gl));
+        // 添加随机波动（±2dB）
+        edge.rssi_6gl = Arrays.asList(
+            (int) Math.round(baseL + (Math.random() * 4 - 2)),
+            (int) Math.round(baseL + (Math.random() * 4 - 2))
+        );
         
-        edge.rssi_6gh = Arrays.asList(rssi1_6gh, rssi2_6gh);
-        edge.rssi_6gl = Arrays.asList(rssi1_6gl, rssi2_6gl);
+        edge.rssi_6gh = Arrays.asList(
+            (int) Math.round(baseH + (Math.random() * 4 - 2)),
+            (int) Math.round(baseH + (Math.random() * 4 - 2))
+        );
         
         return edge;
     }
@@ -147,21 +180,43 @@ public class TopologyTest {
         data.nodes = new HashMap<>();
         data.edges = new HashMap<>();
 
-        // 从系统属性获取节点数量，如果未指定则使用默认值
         int nodeCount = Integer.parseInt(
             System.getProperty("nodeCount", String.valueOf(DEFAULT_NODE_COUNT))
         );
+        
+        // 根节点的GPS坐标
+        double rootLat = -36.739546;
+        double rootLon = 174.631266;
+        
+        // 存储所有节点的GPS坐标
+        List<List<Double>> nodePositions = new ArrayList<>();
         
         // 生成节点数据
         for (int i = 0; i < nodeCount; i++) {
             String nodeId = "SN" + i;
             NodeInfo node = new NodeInfo();
             
-            // 生成GPS坐标
-            node.gps = Arrays.asList(
-                30.0 + Math.random(), // 经度
-                120.0 + Math.random() // 纬度
-            );
+            // 为根节点使用固定坐标，为其他节点在周围范围内随机生成坐标
+            List<Double> gps;
+            if (i == 0) {
+                gps = Arrays.asList(rootLat, rootLon);
+            } else {
+                // 在根节点周围2公里范围内随机生成坐标
+                double radius = Math.random() * 2000; // 最大2000米
+                double angle = Math.random() * 2 * Math.PI;
+                
+                // 将极坐标转换为经纬度偏移
+                double latOffset = (radius / 111111) * Math.cos(angle);
+                double lonOffset = (radius / (111111 * Math.cos(Math.toRadians(rootLat)))) * Math.sin(angle);
+                
+                gps = Arrays.asList(
+                    rootLat + latOffset,
+                    rootLon + lonOffset
+                );
+            }
+            
+            nodePositions.add(gps);
+            node.gps = gps;
             
             // 生成负载
             node.load = Math.random() * 500; // 0-500 Mbps
@@ -213,11 +268,11 @@ public class TopologyTest {
             data.nodes.put(nodeId, node);
         }
 
-        // 生成边数据 - 自动适应新的节点数量
+        // 生成边数据 - 使用基于距离的RSSI计算
         for (int i = 0; i < nodeCount; i++) {
             for (int j = i + 1; j < nodeCount; j++) {
                 String edgeKey = String.format("SN%d_SN%d", i, j);
-                data.edges.put(edgeKey, generateEdgeInfo());
+                data.edges.put(edgeKey, generateEdgeInfo(nodePositions.get(i), nodePositions.get(j)));
             }
         }
 
