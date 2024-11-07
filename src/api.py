@@ -48,7 +48,8 @@ def generate_topology(nodes_json: str, edges_json: str, config_json: str = None)
                 'level': node.level,
                 'channel': node.channel,
                 'bandwidth': node.bandwidth,
-                'maxEirp': node.max_eirp
+                'maxEirp': node.max_eirp,
+                'gps': node.gps
             }
             for node_id, node in topology.items()
         }

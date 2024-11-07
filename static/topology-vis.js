@@ -41,6 +41,12 @@ class TopologyVisualizer {
         const bwInfo = `BW:${node.bandwidth.join(',')}`;
         ctx.fillText(channelInfo, x, y + radius + 15);
         ctx.fillText(bwInfo, x, y + radius + 30);
+        
+        // 添加 GPS 信息显示
+        if (node.gps) {
+            const gpsInfo = `(${node.gps[0].toFixed(6)}, ${node.gps[1].toFixed(6)})`;
+            ctx.fillText(gpsInfo, x, y + radius + 45);
+        }
     }
 
     drawTopology(data) {
